@@ -1,0 +1,27 @@
+# extends 'base.html'
+# set title = "All Members"
+
+# block content
+<table id="member-list">
+    <thead>
+        <tr>
+            <th style="width: 200px;">Legal Name</th>
+            <th style="width: 200px;">Con Name</th>
+            <th style="width: 400px;">City, State</th>
+        </tr>
+    </thead>
+    <tbody>
+        # for o in members
+        <tr class={{ loop.cycle('odd', 'even') }}>
+            <td>
+                <a href="{{ lib.url('convention.reg.views.member_view', id=o.pk) }}">
+                    {{ o.name }}
+                </a>
+            </td>
+            <td>{{ o.con_name }}</td>
+            <td>{{ o.city }}, {{ o.state }}</td>
+        </tr>
+        # endfor
+    </tbody>
+</table>
+# endblock

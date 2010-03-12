@@ -1,0 +1,20 @@
+# extends 'base.html'
+# set title = "Badges Pending"
+
+# block content
+<p>Badges pending: {{ objects.count() }}</p>
+# if objects.count()
+<p>
+    <ul>
+        <li><a href="{{ lib.url('convention.reg.views.print_pdf', 1)}}">PDF of <strong>1 page</strong> of pending badges.</a></li>
+        <li><a href="{{ lib.url('convention.reg.views.print_pdf')}}">PDF of <strong>ALL</strong> pending badges.</a></li>
+    </ul>
+    <strong>Don't click on this if you're not the guy who is supposed to print badges.</strong>
+</p>
+# endif
+<ol>
+    # for o in objects
+    <li>{{ o.member }} {% if o.member.con_name %}<strong>&mdash; {{ o.member.con_name }}</strong>{% endif %} ({{o.type.name}})</li>
+    # endfor
+</ol>
+# endblock

@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+    <head>
+        <title>{{ title }}</title>
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/css/elastic.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="/static/css/main.css" />
+        <link rel="stylesheet" type="text/css" media="print" href="/static/css/elastic.print.css" />
+        <script src="/static/js/jquery.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+        <script src="/static/js/elastic.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+    </head>
+    <body>
+        <div class="columns" style="padding:20px;">
+	    <div class="container" >
+		<div class="fixed column" style="width:200px;">
+                    <div class="container" >
+                        <p><a href="/reg/">Main</a></p>
+                        <p><a href="/reg/member_list/">List Members</a></p>
+                        <p><a href="/reg/member_add/">Add Member</a></p>
+                        <!-- <p><a href="/reg/register/">Register a Member</a></p> -->
+                        <p><a href="/reg/pending/">Pending badges</a></p>
+                    </div>
+                </div>
+                <div class="elastic column">
+                    <div class="container" >
+                    {% block content %} {% endblock %}
+                    </div>
+                </div>
+		<div class="fixed column" style="width:200px;">
+        	    <div class="container" >
+                    # if events
+                        <h3>Registrations Avilable:</h3>
+                        # for e in events.keys()
+                            <h4>{{ e }}</h4>
+                            <table style="width: 100%;" >
+                            # for t in events[e]
+                                <tr class={{ loop.cycle('odd', 'even') }}>
+                                    <th style="text-align: left;">
+                                        {{ t }}
+                                    </th>
+                                    <td style="text-align: right;">
+                                        ${{ t.price }}
+                                    </td>
+                                </tr>
+                            # endfor
+                            </ul>
+                        # endfor
+                    # endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
