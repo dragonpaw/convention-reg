@@ -1,0 +1,27 @@
+# extends 'base.html'
+
+# block content
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Zip</th>
+        <th>Country</th>
+        <th>Email</th>
+    </tr>
+    # for o in objects
+    <tr>
+        <td>{{ o.name }}</td>
+        <td>{{ o.address }}</td>
+        <td>{{ o.city }}</td>
+        <td>{{ o.state }}</td>
+        <td>{{ o.zip }}</td>
+        <td>{{ o.country }}</td>
+        <td>{{ o.email }}</td>
+    </tr>
+    # endfor
+</table>
+
+# endblock
