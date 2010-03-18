@@ -1,12 +1,13 @@
 from datetime import datetime
 from collections import defaultdict
-from django.shortcuts import redirect
-from django.http import HttpResponse
 from math import ceil
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
+from django.http import HttpResponse, Http404
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required, permission_required
 
 from convention.lib.jinja import render, render_to_response
 from convention.reg.models import Event, Member, Membership, MembershipType
@@ -42,6 +43,7 @@ def _process_member_form(request, member=None):
 
     return form
 
+@permission_required('reg.add_member')
 def member_add(request):
     form = _process_member_form(request)
 
@@ -59,10 +61,12 @@ def member_add(request):
                                   { 'form': form },
                                   request)
 
+@permission_required('reg.change_member')
 @render('reg_member_list.html')
 def member_list(request):
     return { 'members': Member.objects.all() }
 
+@permission_required('reg.change_member')
 @render('reg_member_view.html')
 def member_view(request, id):
     member = Member.objects.get(pk=id)
@@ -82,6 +86,7 @@ def member_view(request, id):
         'current_events': current,
     }
 
+@permission_required('reg.add_membership')
 def membership_add(request):
     form = MembershipForm(request.POST)
 
@@ -107,15 +112,45 @@ def membership_add(request):
 
     return redirect(member_view, member.pk)
 
+@permission_required('reg.print_badges')
 @render('reg_pending.html')
 def print_pending(request):
     q = Membership.objects.to_print()
     return { 'objects': q }
 
+
 @render('reg_index.html')
 def index(request):
     return {}
 
+@render('reg_member_report.html')
+def report_member(request, slug=None, public_only=False):
+    if slug:
+        event = Event.objects.get(slug=slug)
+        title = event.name
+    else:
+        event = None
+        title = "Members"
+
+    if event:
+        q = Member.objects.filter(memberships__type__event=event)
+    else:
+        q = Member.objects.all()
+
+    if public_only:
+        q = q.filter(public=True)
+        title += "(Public)"
+    else:
+        if not request.user.has_perm('reg.change_member'):
+            raise Http404
+
+    return {
+        'title': title,
+        'objects': q,
+    }
+
+
+@permission_required('reg.print_badges')
 def print_pdf(request, pages=None):
     response = HttpResponse(mimetype='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=badges.pdf'

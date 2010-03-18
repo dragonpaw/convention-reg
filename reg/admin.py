@@ -16,10 +16,18 @@ class EventOptions(admin.ModelAdmin):
     inlines = (
         MembershipTypeInline,
     )
+    readonly_fields = ('slug',) # Django 1.2
+    fieldsets = (
+        (None, {'fields': (
+            'name',  'to_print', 'badge_number',
+        ), }),
+    )
 
 class MemberOptions(admin.ModelAdmin):
     fieldsets = (
-        (None, {'fields': ('name', 'con_name', 'affiliation', 'email', 'birth_date'), }),
+        (None, {'fields': (
+            'name', 'con_name', 'affiliation', 'email', 'birth_date', 'public'
+        ), }),
         ('Address', {
             'fields': ('address', 'city', 'state', 'zip', 'country'),
         }),

@@ -1,7 +1,10 @@
-from django.db import models
 from datetime import date, timedelta
-from convention import settings
 from reportlab.lib import colors
+
+from django.db import models
+from django.template.defaultfilters import slugify
+
+from convention import settings
 
 color_list = colors.getAllNamedColors().keys()
 color_list.sort()
@@ -10,9 +13,10 @@ COLOR_OPTIONS = [  (x, x) for x in color_list ]
 
 # Create your models here.
 class Event(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     badge_number = models.IntegerField("Next badge number", default=0)
     to_print = models.BooleanField("Print the badges for this event.", default=True)
+    slug = models.SlugField()
 
     class Meta:
         ordering = ('name',)
@@ -26,6 +30,12 @@ class Event(models.Model):
         self.save()
         return num
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super(Event, self).save(*args, **kwargs)
+
+
 class Member(models.Model):
     name = models.CharField("Legal name", max_length=100)
     con_name = models.CharField('Badge name', max_length=100, blank=True, help_text="Otherwise will print real name")
@@ -38,22 +48,28 @@ class Member(models.Model):
     birth_date = models.DateField(blank=True, null=True)
     affiliation = models.ForeignKey('Affiliation', blank=True, null=True)
     email = models.EmailField('Email Address', blank=True, default='')
+    public = models.BooleanField('Publish?', default=True)
 
     class Meta:
         ordering = ('name',)
 
+
     def __unicode__(self):
         return self.name
+
 
     def age(self):
         delta = date.today() - self.birth_date
         return delta.days / 365
 
+
     def is_adult(self):
         return self.age >= 18
 
+
     def is_drinking_age(self):
         return self.age >= 21
+
 
     def age_code(self):
         if not self.birth_date:
@@ -67,11 +83,29 @@ class Member(models.Model):
         else:
             return 'adult'
 
+
     def badge_name(self):
         if self.con_name:
             return self.con_name
         else:
             return self.name
+
+
+    def save(self, *args, **kwargs):
+        if self.birth_date > date.today():
+            v = self.birth_date
+            v = v.replace(year=v.year-100)
+            self.birth_date = v
+        super(Member, self).save(*args, **kwargs)
+
+
+class MembershipTypeManager(models.Manager):
+    def available(self):
+        today = date.today()
+        return super(MembershipTypeManager, self).get_query_set().filter(
+            sale_start__lte = today,
+            sale_end__gte = today,
+        )
 
 class MembershipType(models.Model):
     event = models.ForeignKey(Event)
@@ -81,11 +115,17 @@ class MembershipType(models.Model):
     sale_end = models.DateTimeField("When to stop selling badges")
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
+    # Custom manager so I can see available membership types available.
+    objects = MembershipTypeManager()
+
     class Meta:
         ordering = ('event',)
+        permissions = (
+            ("print_badges", "Can view the queue and print the badges."),
+        )
 
     def __unicode__(self):
-        return self.name
+        return "{0}: {1}".format(self.event.name, self.name)
 
     def __repr__(self):
         return '<%s: %s>' % (self.event, self.name)

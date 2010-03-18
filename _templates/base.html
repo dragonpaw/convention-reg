@@ -14,11 +14,9 @@
 	    <div class="container" >
 		<div class="fixed column" style="width:200px;">
                     <div class="container" >
-                        <p><a href="/reg/">Main</a></p>
-                        <p><a href="/reg/member_list/">List Members</a></p>
-                        <p><a href="/reg/member_add/">Add Member</a></p>
-                        <!-- <p><a href="/reg/register/">Register a Member</a></p> -->
-                        <p><a href="/reg/pending/">Pending badges</a></p>
+                        {% block navbar %}
+                        {% include "navbar.html" %}
+                        {% endblock %}
                     </div>
                 </div>
                 <div class="elastic column">
@@ -26,26 +24,9 @@
                     {% block content %} {% endblock %}
                     </div>
                 </div>
-		<div class="fixed column" style="width:200px;">
-        	    <div class="container" >
-                    # if events
-                        <h3>Registrations Avilable:</h3>
-                        # for e in events.keys()
-                            <h4>{{ e }}</h4>
-                            <table style="width: 100%;" >
-                            # for t in events[e]
-                                <tr class={{ loop.cycle('odd', 'even') }}>
-                                    <th style="text-align: left;">
-                                        {{ t }}
-                                    </th>
-                                    <td style="text-align: right;">
-                                        ${{ t.price }}
-                                    </td>
-                                </tr>
-                            # endfor
-                            </ul>
-                        # endfor
-                    # endif
+		<div class="fixed column" style="width:270px;">
+                    <div class="container" >
+                        {% block right %}{% endblock %}
                     </div>
                 </div>
             </div>
