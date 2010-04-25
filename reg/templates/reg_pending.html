@@ -5,12 +5,13 @@
 <p>Badges pending: {{ objects.count() }}</p>
 # if objects.count()
 <p>
+    <strong>Don't click on this if you're not the guy who is supposed to print badges.</strong>
     <ul>
         <li><a href="{{ lib.url('convention.reg.views.print_pdf', 1)}}">PDF of <strong>1 page</strong> of pending badges.</a></li>
         <li><a href="{{ lib.url('convention.reg.views.print_pdf')}}">PDF of <strong>ALL</strong> pending badges.</a></li>
     </ul>
-    <strong>Don't click on this if you're not the guy who is supposed to print badges.</strong>
 </p>
+<hr>
 # endif
 <ol>
     # for o in objects

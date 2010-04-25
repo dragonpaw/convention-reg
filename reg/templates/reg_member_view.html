@@ -2,43 +2,108 @@
 # set title = "Detail: " + member.name
 
 # block right
-<form method="post" action="{{ lib.url('convention.reg.views.membership_add') }}">
-<table style="width: 100%;" id="add_a_memberships">
+<table style="width: 100%;" id="cart">
     <thead>
-        <tr><th colspan="2">Add a Membership</th></tr>
+        <tr><th colspan="4">Cart</th></tr>
+        <tr>
+            <th class="subhead">Member</th>
+            <th class="subhead">Type</th>
+            <th class="subhead">Price</th>
+            <th class="subhead">Del</th>
+        </tr>
     </thead><tbody>
-        {{ reg_form.as_table() }}
-        <tr><td colspan="2"><input type="submit" value="Add"></td></tr>
+        {% set row_class = cycler('odd', 'even') %}
+
+        {% for p in request.session.memberships %}
+            {% for t in request.session.memberships[p] %}
+            {% set qty = request.session.memberships[p][t] %}
+            <tr class={{ row_class.next() }}>
+                <th class="left">{{p.name}}</th>
+                <td class="center">{{t.name}}
+                    {% if qty > 1 %} x {{qty}}{% endif %}
+                </td>
+                <td class="right">${{t.price * qty}}</td>
+                <td>
+                    <a href="{{ lib.url('convention.reg.views.cart_remove', p.pk, t.pk) }}" class="ss_sprite ss_delete">&nbsp;</a>
+                </td>
+
+            </tr>
+            {% endfor %}
+        {% endfor %}
     </tbody>
+    <form action="{{ lib.url('convention.reg.views.checkout')}}" method="post">
+    <tfoot>
+        <tr>
+            <th>Total</th>
+            <td colspan="3" class="right">{{ request.session.total|default('0.00', true) }}</td>
+        </tr>
+        <tr>
+            <td>{{ payment_form.method.label }}</td>
+            <td colspan="2">{{ payment_form.method }}</td>
+        </tr>
+        <tr>
+            <td>{{ payment_form.comment.label }}</td>
+            <td colspan="3">{{ payment_form.comment }}</td>
+        </tr>
+        <tr><td colspan="4"><input type="submit" value="Checkout"></td></tr>
+    </tfoot>
+    </form>
 </table>
-<input type="hidden" name="member_id" value="{{member.pk}}">
+<p>Click on the green checkbox to checkout.</p>
+# endblock
+
+# block content
+<form action="{{ lib.url('convention.reg.views.member_view', member.pk) }}" method="post">
+# include 'reg_member_form.html'
 </form>
+
+<br><br>
 
 <table style="width: 100%;" id="available_memberships">
     <thead>
-        <tr><th colspan="3">Available Memberships</th></tr>
+        <tr><th colspan="3">Available Memberships (Click to add to cart.)</th></tr>
     </thead><tbody>
-        # for m in types
-            # if m not in current_events
-            <tr>
-                <th style="text-align: left; width: 50%;">{{m.event.name}}</th>
-                <td style="text-align: center; width: 25%;">{{m.name}}</td>
-                <td style="text-align: right; width: 25%;">${{m.price}}</td>
+        # for t in types|not_in_cart
+            <tr class={{ loop.cycle('odd', 'even') }}>
+                <th class="left" style="width: 50%;">
+                    {% if t.in_quantity %}
+                        {{t.name}}
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 1)}}">Add 1</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 5)}}">Add 5</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 10)}}">Add 10</a>
+                    {% else %}
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk)}}">{{t.name}}</a>
+                    {% endif %}
+                </th>
+                <td class="center" style="width: 25%;">{{t.name}}</td>
+                <td class="right" style="width: 25%;">${{t.price}}</td>
             </tr>
-            # endif
         # endfor
     </tbody>
 </table>
 
+<br><br>
+
 <table style="width: 100%;" id="current_memberships">
     <thead>
-        <tr><th colspan="3">Paid Memberships</th></tr>
+        <tr><th colspan="6">Paid Memberships</th></tr>
+        <tr>
+            <th class="subhead">Event</th>
+            <th class="subhead">Type</th>
+            <th class="subhead">#</th>
+            <th class="subhead">Price Paid</th>
+            <th class="subhead">Method</th>
+            <th class="subhead">Comment</th>
+        </tr>
     </thead><tbody>
         # for m in memberships
         <tr class={{ loop.cycle('odd', 'even') }}>
-            <th style="text-align: left; width: 50%;">{{ m.type.event }}</th>
-            <td style="text-align: center; width: 25%;">{{ m.type.name }}</td>
-            <td style="text-align: right; width: 25%;">{{ m.badge_number|default('&mdash;', True) }}</td>
+            <th class="left">{{ m.event.name }}</th>
+            <td class="center">{{ m.type.name }}</td>
+            <td class="right">{{ m.badge_number|default('&mdash;', True) }}</td>
+            <td class="right">{{ m.price }}</td>
+            <td class="right">{{ m.payment_method }}</td>
+            <td class="right">{{ m.comment }}</td>
         </tr>
         # endfor
         # if memberships.count() == 0
@@ -46,10 +111,4 @@
         # endif
     </tbody>
 </table>
-# endblock
-
-# block content
-<form action="{{ lib.url('convention.reg.views.member_view', member.pk) }}" method="post">
-# include 'reg_member_form.html'
-</form>
 # endblock

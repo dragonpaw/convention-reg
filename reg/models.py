@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from reportlab.lib import colors
 
 from django.db import models
@@ -14,7 +14,7 @@ COLOR_OPTIONS = [  (x, x) for x in color_list ]
 # Create your models here.
 class Event(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    badge_number = models.IntegerField("Next badge number", default=0)
+    badge_number = models.IntegerField("Next badge number", default=1)
     to_print = models.BooleanField("Print the badges for this event.", default=True)
     slug = models.SlugField()
 
@@ -36,7 +36,7 @@ class Event(models.Model):
         super(Event, self).save(*args, **kwargs)
 
 
-class Member(models.Model):
+class Person(models.Model):
     name = models.CharField("Legal name", max_length=100)
     con_name = models.CharField('Badge name', max_length=100, blank=True, help_text="Otherwise will print real name")
     address = models.CharField(max_length=100)
@@ -51,25 +51,24 @@ class Member(models.Model):
     public = models.BooleanField('Publish?', default=True)
 
     class Meta:
+        verbose_name_plural = "People"
         ordering = ('name',)
-
 
     def __unicode__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return '/reg/person/{0}'.format(self.pk)
 
     def age(self):
         delta = date.today() - self.birth_date
         return delta.days / 365
 
-
     def is_adult(self):
         return self.age >= 18
 
-
     def is_drinking_age(self):
         return self.age >= 21
-
 
     def age_code(self):
         if not self.birth_date:
@@ -83,20 +82,18 @@ class Member(models.Model):
         else:
             return 'adult'
 
-
     def badge_name(self):
         if self.con_name:
             return self.con_name
         else:
             return self.name
 
-
     def save(self, *args, **kwargs):
-        if self.birth_date > date.today():
+        if self.birth_date and self.birth_date > date.today():
             v = self.birth_date
             v = v.replace(year=v.year-100)
             self.birth_date = v
-        super(Member, self).save(*args, **kwargs)
+        super(Person, self).save(*args, **kwargs)
 
 
 class MembershipTypeManager(models.Manager):
@@ -107,6 +104,7 @@ class MembershipTypeManager(models.Manager):
             sale_end__gte = today,
         )
 
+
 class MembershipType(models.Model):
     event = models.ForeignKey(Event)
     name = models.CharField(max_length=20)
@@ -114,12 +112,21 @@ class MembershipType(models.Model):
     sale_start = models.DateTimeField("When to start selling badges")
     sale_end = models.DateTimeField("When to stop selling badges")
     price = models.DecimalField(max_digits=6, decimal_places=2)
+    approval_needed = models.BooleanField(default=False)
+    requires = models.ManyToManyField('self',
+        blank = True, null = True,
+        help_text = "Other type tor equire before can be sold.",
+        related_name = 'allows',
+        symmetrical = False,
+    )
+    in_quantity = models.BooleanField('Allow sales of multiple', default=False)
+    numbered = models.BooleanField('Requires a badge number.', default=True)
 
     # Custom manager so I can see available membership types available.
     objects = MembershipTypeManager()
 
     class Meta:
-        ordering = ('event',)
+        ordering = ('name',)
         permissions = (
             ("print_badges", "Can view the queue and print the badges."),
         )
@@ -133,11 +140,13 @@ class MembershipType(models.Model):
     def count(self):
         return self.members.count()
 
+
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=20)
 
     def __unicode__(self):
         return self.name
+
 
 class Affiliation(models.Model):
     name = models.CharField('Description of the group', max_length=40)
@@ -151,6 +160,7 @@ class Affiliation(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class MembershipManager(models.Manager):
     def to_print(self):
         return super(MembershipManager, self).get_query_set().filter(
@@ -160,25 +170,93 @@ class MembershipManager(models.Manager):
             'print_timestamp'
         )
 
-class Membership(models.Model):
-    member = models.ForeignKey(Member, related_name='memberships')
+
+class MembershipSold(models.Model):
+    APPROVAL_CHOICES = (
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+        ('pending', 'Pending'),
+    )
+
+    # Basic fields
+    member = models.ForeignKey(Person, related_name='memberships')
     type = models.ForeignKey(MembershipType, related_name='members')
-    needs_printed = models.BooleanField(default=True)
-    sold_by = models.ForeignKey('auth.User', editable=False, null=True)
     badge_number = models.IntegerField(null=True, blank=True)
     comment = models.CharField(max_length=500, blank=True, default='')
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    payment_method = models.ForeignKey(PaymentMethod)
-    print_timestamp = models.DateTimeField('Time the printing was requested', blank=True, null=True)
 
+    # Payment info
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    payment_method = models.ForeignKey(PaymentMethod, blank=True, null=True)
+    sold_by = models.ForeignKey('auth.User', editable=False, null=True)
+
+    # Printing info
+    needs_printed = models.BooleanField(default=True)
+    print_timestamp = models.DateTimeField('Time printing was requested')
+
+    # Used by complex types
+    state = models.CharField(choices=APPROVAL_CHOICES, default='pending', max_length=20)
+    quantity = models.IntegerField(default=1)
+
+    # Custom handler
     objects = MembershipManager()
 
     class Meta:
-        unique_together = (('member', 'type'),)
+        verbose_name_plural = 'Sold: Memberships'
+        #unique_together = (('member', 'type'),)
         ordering = ('member',)
 
     def __unicode__(self):
         return '%s: %s' % (self.member, self.type)
 
+    @property
     def event(self):
         return self.type.event
+
+    def save(self, *args, **kwargs):
+        if not self.badge_number and self.type.numbered:
+            self.badge_number = self.type.event.next_badge_number()
+
+        if not self.type.approval_needed:
+            self.state = 'approved'
+
+        if not self.print_timestamp:
+            self.print_timestamp = datetime.now()
+
+        super(MembershipSold, self).save(*args, **kwargs)
+
+
+#class AddonType(models.Model):
+#    name = models.CharField(max_length=20)
+#    types = models.ManyToManyField(MembershipType, verbose_name="Memberships")
+#    price = models.DecimalField(max_digits=6, decimal_places=2)
+#    in_quantity = models.BooleanField('Allow sales of multiple', default=False)
+#
+#    class Meta:
+#        #unique_together = (('event', 'name'),)
+#        ordering = ('name',)
+#
+#
+#    def __unicode__(self):
+#        return self.name
+#
+#
+#class AddonSold(models.Model):
+#    member = models.ForeignKey(Person, related_name='addons')
+#    quantity = models.IntegerField()
+#    price = models.DecimalField(max_digits=6, decimal_places=2)
+#    type = models.ForeignKey(AddonType, related_name='sold')
+#
+#
+#    @property
+#    def event(self):
+#        return self.type.event
+#
+#
+#    class Meta:
+#        verbose_name_plural = "Sold: Addons"
+#        unique_together = (('member', 'type'),)
+#        ordering = ('member','type')
+#
+#
+#    def __unicode__(self):
+#        return '%s: %s' % (self.member, self.type)

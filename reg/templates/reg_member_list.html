@@ -14,7 +14,7 @@
         # for o in members
         <tr class={{ loop.cycle('odd', 'even') }}>
             <td>
-                <a href="{{ lib.url('convention.reg.views.member_view', id=o.pk) }}">
+                <a href="{{ lib.url('convention.reg.views.person_view', id=o.pk) }}">
                     {{ o.name }}
                 </a>
             </td>

@@ -7,7 +7,7 @@ import sys
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from convention.reg.models import Member, Membership, MembershipType, Event, PaymentMethod
+from convention.reg.models import Person, MembershipSold, MembershipType, Event, PaymentMethod
 
 #0BADGENUM,1FULLNAME,2FIRSTNAME,3LASTNAME,4ADDRESS,5CITY,6STATE,7ZIP,8PHONE,
 #9COUNTRY,10EMAIL,11ENTRYDATE,12BADGENAME,13COMMENTS,14AMOUNTPAID,15HOWPAID,16COMMENTS2
@@ -42,9 +42,9 @@ class Command(BaseCommand):
                 continue
 
             try:
-                member = Member.objects.get(name=full_name)
-            except Member.DoesNotExist:
-                member = Member(name=full_name)
+                member = Person.objects.get(name=full_name)
+            except Person.DoesNotExist:
+                member = Person(name=full_name)
                 added_members += 1
 
             member.address = rows['ADDRESS']
@@ -68,12 +68,12 @@ class Command(BaseCommand):
 
             #------------------------------------------------------------------
             # Avoid errors when re-running.
-            if Membership.objects.filter(member=member, type=type).count():
+            if MembershipSold.objects.filter(member=member, type=type).count():
                 continue
 
             # Now, handle the membership.
-            membership = Membership(member=member, type=type)
-            print 'Member: {0}'.format(member)
+            membership = MembershipSold(member=member, type=type)
+            print 'Person: {0}'.format(member)
             added_memberships += 1
 
             membership.badge_number = rows['BADGENUM']

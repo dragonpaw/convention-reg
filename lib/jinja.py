@@ -75,22 +75,25 @@ for app in settings.INSTALLED_APPS: #import jtemp.py from each app and add it to
         #if jtemp defines jinja_name, use it as the module name in jinja, otherwise use application name
         name = getattr( jtemp, 'jinja_name', app_name )
         jenv.globals[name] = jtemp
-    except ImportError:
-        pass
+    except ImportError, e:
+        if 'No module named' not in str(e):
+            print "Error loading Jinja2 tags for %s: %s" % (app, str(e))
     try:
         filters = import_module( app + '.jfilters' )
         filter_functions = [getattr(filters,filter) for filter in dir(filters) if callable(getattr(filters,filter)) and filter.startswith("filter_")]
         for func in filter_functions:
             jenv.filters[getattr(func, 'jinja_name', func.__name__[7:])] = func
-    except ImportError:
-        pass
+    except ImportError, e:
+        if 'No module named' not in str(e):
+            print "Error loading Jinja2 filters for %s: %s" % (app, str(e))
     try:
         tests = import_module( app + '.jtests' )
         test_functions = [getattr(tests,test) for test in dir(tests) if callable(getattr(tests,test)) and test.startswith("is_")]
         for func in test_functions:
             jenv.tests[getattr(func, 'jinja_name', func.__name__[3:])] = func
-    except ImportError:
-        pass
+    except ImportError, e:
+        if 'No module named' not in str(e):
+            print "Error loading Jinja2 tests for %s: %s" % (app, str(e))
 
 def get_select_template( filenames ):
     """ get or select template; accepts a file name or a list of file names """

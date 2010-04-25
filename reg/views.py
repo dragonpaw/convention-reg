@@ -1,5 +1,6 @@
 from datetime import datetime
 from collections import defaultdict
+from decimal import Decimal
 from math import ceil
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -10,8 +11,8 @@ from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required, permission_required
 
 from convention.lib.jinja import render, render_to_response
-from convention.reg.models import Event, Member, Membership, MembershipType
-from convention.reg.forms import MemberForm, MembershipForm
+from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod
+from convention.reg.forms import PaymentForm, MemberForm
 from convention.reg.pdf import pos, start
 
 def _process_member_form(request, member=None):
@@ -22,7 +23,7 @@ def _process_member_form(request, member=None):
             return MemberForm()
     else:
         if not member:
-            member = Member()
+            member = Person()
 
     form = MemberForm(request.POST)
     if not form.is_valid():
@@ -43,8 +44,8 @@ def _process_member_form(request, member=None):
 
     return form
 
-@permission_required('reg.add_member')
-def member_add(request):
+@permission_required('reg.add_person')
+def person_add(request):
     form = _process_member_form(request)
 
     if request.method == 'POST':
@@ -61,15 +62,15 @@ def member_add(request):
                                   { 'form': form },
                                   request)
 
-@permission_required('reg.change_member')
+@permission_required('reg.change_person')
 @render('reg_member_list.html')
-def member_list(request):
-    return { 'members': Member.objects.all() }
+def people_list(request):
+    return { 'members': Person.objects.all() }
 
-@permission_required('reg.change_member')
+@permission_required('reg.change_person')
 @render('reg_member_view.html')
-def member_view(request, id):
-    member = Member.objects.get(pk=id)
+def person_view(request, id):
+    member = Person.objects.get(pk=id)
     current = list()
 
     memberships = member.memberships.all()
@@ -81,41 +82,124 @@ def member_view(request, id):
     return {
         'member': member,
         'form': form,
-        'reg_form': MembershipForm(initial={'member':member.pk}),
+        'payment_form': PaymentForm(),
         'memberships': memberships,
         'current_events': current,
     }
 
+
+def _cart_struct():
+    return defaultdict(int)
+
+
+def _get_cart(request):
+    if 'memberships' not in request.session:
+        request.session['memberships'] = defaultdict(_cart_struct)
+    return request.session['memberships']
+
+
+def _cart(request, person, type, qty=1):
+    """Cart manipulation helper.
+
+    Requires: Person and MembershipType.
+    Optional: quantity. Defaults to 1. Pass 0 to delete from cart.
+
+    Quantity over 1 for types that don't accept a quantity is ignored silently.
+    """
+    cart = _get_cart(request)
+
+    if qty:
+        if type.in_quantity:
+            cart[person][type] += qty
+        else:
+            cart[person][type] = 1
+    else:
+        try:
+            del cart[person][type]
+        except KeyError:
+            pass
+
+    total = Decimal(0)
+    for p in cart:
+        for t in cart[p]:
+            total += (t.price * cart[p][t])
+    request.session['total'] = total
+
+
+def _cart_empty(request):
+    del request.session['memberships']
+    del request.session['total']
+
+
 @permission_required('reg.add_membership')
-def membership_add(request):
-    form = MembershipForm(request.POST)
+def cart_remove(request, person_id, type_id):
+    person = Person.objects.get(pk=person_id)
+    type = MembershipType.objects.get(pk=type_id)
+
+    _cart(request, person, type, 0)
+    return redirect(person_view, person.pk)
+
+
+@permission_required('reg.add_membership')
+def cart_add(request, person_id, type_id, qty=1):
+    person = Person.objects.get(pk=person_id)
+    type = MembershipType.objects.get(pk=type_id)
+    qty = int(qty) # If passed in from URL, will be unicode.
+
+    _cart(request, person, type, qty)
+    return redirect(person_view, person.pk)
+
+
+@permission_required('reg.add_membership')
+def checkout(request):
+    """Perform a checkout opertion.
+
+    For types that can be in-quantity, if there's already some sold, a new sale
+    record will be created, showing the additional quantity. (This is
+    intentional so that there will be proper logging.) """
+
+    form = PaymentForm(request.POST)
 
     if not form.is_valid():
-        return render_to_response('error.html',
-                                  {'error':  form.errors},
-                                  request )
+        return render_to_response(
+            'error.html',
+            {'error': form.errors},
+            request
+        )
 
-    member = Member.objects.get(pk=request.POST['member_id'])
-    type = form.cleaned_data['type']
-    if member.memberships.filter(type=type).count():
-        return render_to_response('error.html',
-                                  { 'error': 'That membership has already been sold.'},
-                                  request)
+    cart = _get_cart(request)
 
-    membership = Membership()
-    membership.member = member
-    membership.type = type
-    membership.price = membership.type.price
-    membership.payment_method = form.cleaned_data['payment_method']
-    membership.print_timestamp = datetime.now()
-    membership.save()
+    # First, some sanity checks.
+    for person in cart:
+        for type in cart[person]:
+            if person.memberships.filter(type=type).count() and not type.in_quantity:
+                return render_to_response(
+                    'error.html',
+                    { 'error': 'That membership has already been sold.'},
+                    request
+                )
 
-    return redirect(member_view, member.pk)
+    # OK, now safe to commit.
+    for person in cart:
+        for type in cart[person]:
+
+            membership = MembershipSold()
+            membership.member = person
+            membership.type = type
+            membership.price = type.price
+            membership.payment_method = form.cleaned_data['method']
+            membership.sold_by = request.user
+            membership.comment = form.cleaned_data['comment']
+            membership.save()
+
+    _cart_empty(request)
+
+    return redirect(print_pending)
 
 @permission_required('reg.print_badges')
 @render('reg_pending.html')
 def print_pending(request):
-    q = Membership.objects.to_print()
+    q = MembershipSold.objects.to_print()
     return { 'objects': q }
 
 
@@ -133,9 +217,9 @@ def report_member(request, slug=None, public_only=False):
         title = "Members"
 
     if event:
-        q = Member.objects.filter(memberships__type__event=event)
+        q = Person.objects.filter(memberships__type__event=event)
     else:
-        q = Member.objects.all()
+        q = Person.objects.all()
 
     if public_only:
         q = q.filter(public=True)
@@ -158,19 +242,11 @@ def print_pdf(request, pages=None):
     p = canvas.Canvas(response, pagesize=letter)
     w, h = letter
 
-    pending = Membership.objects.to_print()
+    pending = MembershipSold.objects.to_print()
 
     x = 1
     page = 1
     for m in pending:
-
-        # If it's blank, assign the next badge number to it.
-        if not m.badge_number:
-            e = m.type.event
-            e.badge_number += 1
-            m.badge_number = e.badge_number
-            e.save()
-            m.save()
 
         # Render the individual badge.
         p.saveState()

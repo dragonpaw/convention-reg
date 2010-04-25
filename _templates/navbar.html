@@ -1,27 +1,33 @@
 <p>Registration</p>
 <ul>
     <li><a href="/reg/">Main</a></li>
-    <li><a href="/reg/member_list/">List Members</a></li>
-    <li><a href="/reg/member_add/">Add Member</a></li>
+    <li><a href="/reg/people/">List Perople</a></li>
+    <li><a href="/reg/person/add/">Add Person</a></li>
     <li><a href="/reg/pending/">Pending badges</a></li>
 </ul>
 <p>Reports</p>
 <ul>
     <li><a href="/reg/report/members/all/">Members</a></li>
     <li><a href="/reg/report/members/public/">Members (Public)</a></li>
-    # for e in events
+    {% for e in events %}
         <li><a href="/reg/report/members/all/{{e.slug}}/">{{e.name}}</a></li>
         <li><a href="/reg/report/members/public/{{e.slug}}/">{{e.name}} (Public)</a></li>
-    # endfor
+    {% endfor %}
 </ul>
 
-# if user.is_authenticated()
+{% if user.is_staff %}
+<ul>
+    <li><a href="/admin/">Admin</a></li>
+</ul>
+{% endif %}
+
+{% if user.is_authenticated() %}
     <p>Logged in as: {{ user.get_full_name() }}</p>
     <ul>
         <li><a href="/accounts/logout/">Logout</a></li>
     </ul>
-# else
+{% else %}
     <ul>
         <li><a href="/accounts/login/">Login</a></li>
     </ul>
-# endif
+{% endif %}

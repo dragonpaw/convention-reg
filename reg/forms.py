@@ -1,5 +1,5 @@
 from django import forms
-from convention.reg.models import Member, Membership, MembershipType, PaymentMethod
+from convention.reg.models import Person, MembershipSold, MembershipType, PaymentMethod
 
 class MemberForm(forms.ModelForm):
 
@@ -8,13 +8,13 @@ class MemberForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Member
+        model = Person
 
 
 class MembershipForm(forms.ModelForm):
     member = forms.ModelChoiceField(
-        label="Member",
-        queryset=Member.objects.all(),
+        label="Person",
+        queryset=Person.objects.all(),
         widget=forms.HiddenInput(),
     )
 
@@ -30,5 +30,13 @@ class MembershipForm(forms.ModelForm):
 
 
     class Meta:
-        model = Membership
+        model = MembershipSold
         fields = ( 'type', 'payment_method')
+
+
+class PaymentForm(forms.Form):
+    method = forms.ModelChoiceField(
+        queryset=PaymentMethod.objects.all(),
+    )
+
+    comment = forms.CharField(max_length=80, required=False, label="Comment")
