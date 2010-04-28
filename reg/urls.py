@@ -21,4 +21,6 @@ urlpatterns = patterns('convention.reg.views',
 
     (r'^report/members/all/(?P<slug>[\w\-]+)/$', 'report_member'),
     (r'^report/members/public/(?P<slug>[\w\-]+)/$', 'report_member', {'public_only':True}),
+
+    (r'^report/members/approvals/(?P<slug>[\w\-]+)/$', 'approvals'),
 )

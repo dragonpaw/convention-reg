@@ -1,7 +1,7 @@
 <p>Registration</p>
 <ul>
     <li><a href="/reg/">Main</a></li>
-    <li><a href="/reg/people/">List Perople</a></li>
+    <li><a href="/reg/people/">List People</a></li>
     <li><a href="/reg/person/add/">Add Person</a></li>
     <li><a href="/reg/pending/">Pending badges</a></li>
 </ul>
@@ -12,6 +12,7 @@
     {% for e in events %}
         <li><a href="/reg/report/members/all/{{e.slug}}/">{{e.name}}</a></li>
         <li><a href="/reg/report/members/public/{{e.slug}}/">{{e.name}} (Public)</a></li>
+        <li><a href="/reg/report/members/approvals/{{e.slug}}/">{{e.name}} (Approvals)</a></li>
     {% endfor %}
 </ul>
 

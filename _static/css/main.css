@@ -26,7 +26,13 @@ tr.odd { background-color: rgb(230, 230, 250); }
 .right { text-align: right; }
 .center { text-align: center; }
 
-.errors, .errorlist { color: rgb(255, 165, 0);}
+.errors, .errorlist, { color: rgb(255, 165, 0);}
+.denied-even { background-color: rgb(225, 0, 166); text-decoration: line-through !important; }
+.denied-odd { background-color: rgb(240, 47, 163); text-decoration: line-through !important; }
+.approved-even { background-color: rgb(168, 255, 168); }
+.approved-odd { background-color: rgb(138, 240, 138); }
+.pending-even { background-color: rgb(240, 226, 47); }
+.pending-odd { background-color: rgb(255, 239, 0); }
 
 th.subhead { font-size: 0.8em; background-color: rgb(30,30,30);}
 
@@ -36,5 +42,3 @@ tfoot { border-top: double black; }
 #id_birth_date { width: 120px; }
 #id_state, #id_zip, #id_country { width: 70px; }
 table.member_form th { text-align: left; width: 80px; }
-
-

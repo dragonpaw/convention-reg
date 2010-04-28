@@ -107,26 +107,26 @@ class MembershipTypeManager(models.Manager):
 
 class MembershipType(models.Model):
     event = models.ForeignKey(Event)
-    name = models.CharField(max_length=20)
+    name = models.CharField("Name of type", max_length=20, help_text="Name of the type of membership: Staff, Full, Saturday, Vendor.")
     code = models.CharField("Code to put on badges", max_length=3, blank=True, default='')
-    sale_start = models.DateTimeField("When to start selling badges")
-    sale_end = models.DateTimeField("When to stop selling badges")
+    sale_start = models.DateTimeField("When to start selling badges", help_text="Staff cannot sell this membership before this date.")
+    sale_end = models.DateTimeField("When to stop selling badges", help_text="Staff cannot sell this membership after this date.")
     price = models.DecimalField(max_digits=6, decimal_places=2)
-    approval_needed = models.BooleanField(default=False)
+    approval_needed = models.BooleanField(default=False, help_text="Requires reg manager approval before will be printed. E.g.: Vendor.")
     requires = models.ManyToManyField('self',
         blank = True, null = True,
-        help_text = "Other type tor equire before can be sold.",
+        help_text = "Other type to require before can be sold. Use for add-on types such as 'Extra Table' or 'Art Panel'.",
         related_name = 'allows',
         symmetrical = False,
     )
-    in_quantity = models.BooleanField('Allow sales of multiple', default=False)
-    numbered = models.BooleanField('Requires a badge number.', default=True)
+    in_quantity = models.BooleanField('Allow sales of multiple', default=False, help_text="Allow one person to buy multiple. Only really used for add-on types, such as 'Vendor Frontage' or 'Extra Table'")
+    numbered = models.BooleanField('Requires a badge number.', default=True, help_text="If unchecked, badges will not be printed. Generally used for add-on types. ")
 
     # Custom manager so I can see available membership types available.
     objects = MembershipTypeManager()
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('event', 'name',)
         permissions = (
             ("print_badges", "Can view the queue and print the badges."),
         )
@@ -166,6 +166,8 @@ class MembershipManager(models.Manager):
         return super(MembershipManager, self).get_query_set().filter(
             needs_printed = True,
             type__event__to_print = True,
+            type__numbered = True,
+            state = 'approved',
         ).order_by(
             'print_timestamp'
         )
@@ -203,7 +205,7 @@ class MembershipSold(models.Model):
     class Meta:
         verbose_name_plural = 'Sold: Memberships'
         #unique_together = (('member', 'type'),)
-        ordering = ('member',)
+        ordering = ('member__name','type__name')
 
     def __unicode__(self):
         return '%s: %s' % (self.member, self.type)
@@ -223,40 +225,3 @@ class MembershipSold(models.Model):
             self.print_timestamp = datetime.now()
 
         super(MembershipSold, self).save(*args, **kwargs)
-
-
-#class AddonType(models.Model):
-#    name = models.CharField(max_length=20)
-#    types = models.ManyToManyField(MembershipType, verbose_name="Memberships")
-#    price = models.DecimalField(max_digits=6, decimal_places=2)
-#    in_quantity = models.BooleanField('Allow sales of multiple', default=False)
-#
-#    class Meta:
-#        #unique_together = (('event', 'name'),)
-#        ordering = ('name',)
-#
-#
-#    def __unicode__(self):
-#        return self.name
-#
-#
-#class AddonSold(models.Model):
-#    member = models.ForeignKey(Person, related_name='addons')
-#    quantity = models.IntegerField()
-#    price = models.DecimalField(max_digits=6, decimal_places=2)
-#    type = models.ForeignKey(AddonType, related_name='sold')
-#
-#
-#    @property
-#    def event(self):
-#        return self.type.event
-#
-#
-#    class Meta:
-#        verbose_name_plural = "Sold: Addons"
-#        unique_together = (('member', 'type'),)
-#        ordering = ('member','type')
-#
-#
-#    def __unicode__(self):
-#        return '%s: %s' % (self.member, self.type)

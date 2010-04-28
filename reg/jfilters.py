@@ -18,25 +18,20 @@ def filter_not_in_cart(context, types):
     member = context['member']
 
     for type in types:
-        if member in cart and type in cart[member]:
+        # For types we are going to buy, or did buy, only show those that
+        # can come in multiples. (Assumes dependencies were met already.)
+        if cart[member][type] or member.memberships.filter(type=type).count():
             if type.in_quantity:
                 new.append(type)
             else:
                 pass # Don't re-add a non-in_quantity type.
-        elif member.memberships.filter(type=type).count():
-            if type.in_quantity:
-                new.append(type)
-            else:
-                pass # Don't re-add a non-in_quantity type.
+        # Otherwise, check for dependencies.
         else:
             if type.requires.count() == 0:
                 new.append(type)
             else:
                 for r in type.requires.all():
-                    if r in cart[member]:
-                        new.append(type)
-                        break
-                    elif member.memberships.filter(type=r).count():
+                    if cart[member][r] or member.memberships.filter(type=r).count():
                         new.append(type)
                         break
 

@@ -3,8 +3,8 @@ from convention.reg.models import Person, MembershipSold, MembershipType, Paymen
 
 class MemberForm(forms.ModelForm):
 
-    birth_date = forms.DateField(('%d/%m/%y',), label = "Birth Date", required=False,
-        widget=forms.DateInput(format='%d/%m/%y', attrs={'class':'input'}),
+    birth_date = forms.DateField(('%m/%d/%y',), label = "Birth Date", required=False,
+        widget=forms.DateInput(format='%m/%d/%y', attrs={'class':'input'}),
     )
 
     class Meta:

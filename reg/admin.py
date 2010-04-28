@@ -11,12 +11,8 @@ class MembershipInline(admin.TabularInline):
     model = MembershipSold
 
 
-#class AddonTypeOptions(admin.ModelAdmin):
-#    list_display = ('name', 'type_names', 'price', 'in_quantity')
-#
-#    def type_names(self, obj):
-#        return ",".join([unicode(t) for t in obj.types.all()])
-#    type_names.short_description = 'Membership types to apply to'
+class MembershipTypeInline(admin.TabularInline):
+    model = MembershipType
 
 
 class EventOptions(admin.ModelAdmin):
@@ -25,6 +21,10 @@ class EventOptions(admin.ModelAdmin):
         (None, {'fields': (
             'name',  'to_print', 'badge_number',
         ), }),
+    )
+
+    inlines = (
+        MembershipTypeInline,
     )
 
 
@@ -69,7 +69,7 @@ class MembershipSoldOptions(admin.ModelAdmin):
         'sold_by',
         'state',
     )
-    list_filter = ('needs_printed','type')
+    list_filter = ('needs_printed', 'type', 'state')
     actions = [reprint]
 
 
@@ -77,5 +77,5 @@ admin.site.register(Affiliation, AffiliationOptions)
 admin.site.register(PaymentMethod)
 admin.site.register(Event, EventOptions)
 admin.site.register(Person, PersonOptions)
-admin.site.register(MembershipType, MembershipTypeOptions)
+#admin.site.register(MembershipType, MembershipTypeOptions)
 admin.site.register(MembershipSold, MembershipSoldOptions)

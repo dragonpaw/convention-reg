@@ -1,0 +1,28 @@
+# extends 'base.html'
+
+# block content
+<h1>{{ title }} &mdash; Approvals List</h1>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>City, State</th>
+        <th>Email</th>
+        <th>Membership Type</th>
+        <th>Approval State</th>
+    </tr>
+    # for o in objects
+    <tr class="{{ o.state }}-{{ loop.cycle ('odd', 'even') }}">
+        <td>{{ o.member.name }}</td>
+        <td>{{ o.member.city }}, {{ o.member.state }}</td>
+        <td>{{ o.member.email }}</td>
+        <td>
+            {{ o.type.name }}
+            {% if o.quantity %}<strong>x {{ o.quantity }}</strong>{% endif %}
+        </td>
+        <td>{{ o.state }}</td>
+    </tr>
+    # endfor
+</table>
+
+# endblock

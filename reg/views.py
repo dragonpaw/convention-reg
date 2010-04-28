@@ -7,7 +7,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
 from django.http import HttpResponse, Http404
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
 from convention.lib.jinja import render, render_to_response
@@ -16,33 +16,21 @@ from convention.reg.forms import PaymentForm, MemberForm
 from convention.reg.pdf import pos, start
 
 def _process_member_form(request, member=None):
-    if request.method != 'POST':
+    if request.method == 'POST':
+        if member:
+            form = MemberForm(request.POST, instance=member)
+        else:
+            form = MemberForm(request.POST)
+        if form.is_valid():
+            form.member = form.save() # Save it into the form so it can be found.
+    else:
         if member:
             return MemberForm(instance=member)
         else:
             return MemberForm()
-    else:
-        if not member:
-            member = Person()
-
-    form = MemberForm(request.POST)
-    if not form.is_valid():
-        return form
-
-    member.name = form.cleaned_data['name']
-    member.con_name = form.cleaned_data['con_name']
-    member.address = form.cleaned_data['address']
-    member.city = form.cleaned_data['city']
-    member.state = form.cleaned_data['state']
-    member.zip = form.cleaned_data['zip']
-    member.phone = form.cleaned_data['phone']
-    member.country = form.cleaned_data['country']
-    member.affiliation = form.cleaned_data['affiliation']
-    member.birth_date = form.cleaned_data['birth_date']
-    member.save()
-    form.member = member
 
     return form
+
 
 @permission_required('reg.add_person')
 def person_add(request):
@@ -56,7 +44,7 @@ def person_add(request):
         print form.errors
 
     if request.method == 'POST' and form.is_valid():
-        return redirect(member_view, form.member.pk)
+        return redirect(person_view, form.member.pk)
     else:
         return render_to_response('reg_member_add.html',
                                   { 'form': form },
@@ -70,7 +58,7 @@ def people_list(request):
 @permission_required('reg.change_person')
 @render('reg_member_view.html')
 def person_view(request, id):
-    member = Person.objects.get(pk=id)
+    member = get_object_or_404(Person, pk=id)
     current = list()
 
     memberships = member.memberships.all()
@@ -172,7 +160,7 @@ def checkout(request):
     # First, some sanity checks.
     for person in cart:
         for type in cart[person]:
-            if person.memberships.filter(type=type).count() and not type.in_quantity:
+            if cart[person][type] and person.memberships.filter(type=type).count() and not type.in_quantity:
                 return render_to_response(
                     'error.html',
                     { 'error': 'That membership has already been sold.'},
@@ -183,13 +171,18 @@ def checkout(request):
     for person in cart:
         for type in cart[person]:
 
+            # Comes from the use of defaultdicts.
+            if cart[person][type] == 0:
+                continue
+
             membership = MembershipSold()
             membership.member = person
             membership.type = type
-            membership.price = type.price
+            membership.price = type.price * cart[person][type]
             membership.payment_method = form.cleaned_data['method']
             membership.sold_by = request.user
             membership.comment = form.cleaned_data['comment']
+            membership.quantity = cart[person][type]
             membership.save()
 
     _cart_empty(request)
@@ -228,6 +221,21 @@ def report_member(request, slug=None, public_only=False):
         if not request.user.has_perm('reg.change_member'):
             raise Http404
 
+    return {
+        'title': title,
+        'objects': q,
+    }
+
+
+@render('reg_approval_report.html')
+def approvals(request, slug):
+    event = Event.objects.get(slug=slug)
+    title = event.name
+
+    q = MembershipSold.objects.filter(
+        type__event=event,
+        type__approval_needed=True,
+    )
     return {
         'title': title,
         'objects': q,
