@@ -67,6 +67,7 @@ class MembershipSoldOptions(admin.ModelAdmin):
         'badge_number',
         'needs_printed',
         'sold_by',
+        'sold_at',
         'state',
     )
     list_filter = ('needs_printed', 'type', 'state')

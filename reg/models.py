@@ -107,10 +107,10 @@ class MembershipTypeManager(models.Manager):
 
 class MembershipType(models.Model):
     event = models.ForeignKey(Event)
-    name = models.CharField("Name of type", max_length=20, help_text="Name of the type of membership: Staff, Full, Saturday, Vendor.")
-    code = models.CharField("Code to put on badges", max_length=3, blank=True, default='')
-    sale_start = models.DateTimeField("When to start selling badges", help_text="Staff cannot sell this membership before this date.")
-    sale_end = models.DateTimeField("When to stop selling badges", help_text="Staff cannot sell this membership after this date.")
+    name = models.CharField("Name", max_length=20, help_text="Name of the type of membership: Staff, Full, Saturday, Vendor.")
+    code = models.CharField("Code", max_length=3, blank=True, default='')
+    sale_start = models.DateTimeField("Sales Start Time", help_text="Staff cannot sell this membership before this date.")
+    sale_end = models.DateTimeField("Sales End Time", help_text="Staff cannot sell this membership after this date.")
     price = models.DecimalField(max_digits=6, decimal_places=2)
     approval_needed = models.BooleanField(default=False, help_text="Requires reg manager approval before will be printed. E.g.: Vendor.")
     requires = models.ManyToManyField('self',
@@ -119,8 +119,8 @@ class MembershipType(models.Model):
         related_name = 'allows',
         symmetrical = False,
     )
-    in_quantity = models.BooleanField('Allow sales of multiple', default=False, help_text="Allow one person to buy multiple. Only really used for add-on types, such as 'Vendor Frontage' or 'Extra Table'")
-    numbered = models.BooleanField('Requires a badge number.', default=True, help_text="If unchecked, badges will not be printed. Generally used for add-on types. ")
+    in_quantity = models.BooleanField('In Quantity?', default=False, help_text="Allow one person to buy multiple. Only really used for add-on types, such as 'Vendor Frontage' or 'Extra Table'")
+    numbered = models.BooleanField('Print and number?', default=True, help_text="If unchecked, badges will not be printed. Generally used for add-on types. ")
 
     # Custom manager so I can see available membership types available.
     objects = MembershipTypeManager()
@@ -190,6 +190,7 @@ class MembershipSold(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
     payment_method = models.ForeignKey(PaymentMethod, blank=True, null=True)
     sold_by = models.ForeignKey('auth.User', editable=False, null=True)
+    sold_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     # Printing info
     needs_printed = models.BooleanField(default=True)
