@@ -26,7 +26,6 @@ tr.odd { background-color: rgb(230, 230, 250); }
 .right { text-align: right; }
 .center { text-align: center; }
 
-.errors, .errorlist, { color: rgb(255, 165, 0);}
 .denied-even { background-color: rgb(225, 0, 166); text-decoration: line-through !important; }
 .denied-odd { background-color: rgb(240, 47, 163); text-decoration: line-through !important; }
 .approved-even { background-color: rgb(168, 255, 168); }
@@ -42,3 +41,38 @@ tfoot { border-top: double black; }
 #id_birth_date { width: 120px; }
 #id_state, #id_zip, #id_country { width: 70px; }
 table.member_form th { text-align: left; width: 80px; }
+
+
+/* */
+.info, .success, .warning, .error, .validation {
+    border: 1px solid;
+    margin: 10px 10px;
+    padding:15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+}
+.info {
+    color: #00529B;
+    background-color: #BDE5F8;
+    background-image: url('../images/knobs/Info.png');
+}
+.success {
+    color: #4F8A10;
+    background-color: #DFF2BF;
+    background-image:url('../images/knobs/Valid-Green.png');
+}
+.warning {
+    color: #9F6000;
+    background-color: #FEEFB3;
+    background-image: url('../images/knobs/Attention.png');
+}
+.error {
+    color: #D8000C;
+    background-color: #FFBABA;
+    background-image: url('../images/knobs/Cancel.png');
+}
+.validation {
+    color: #D63301;
+    background-color: #FFCCBA;
+    background-image: url('../images/knobs/Snapback.png');
+}
