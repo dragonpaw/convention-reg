@@ -15,7 +15,7 @@
 # endif
 <ol>
     # for o in objects
-    <li>{{ o.member }} {% if o.member.con_name %}<strong>&mdash; {{ o.member.con_name }}</strong>{% endif %} ({{o.type.name}})</li>
+    <li>{{ o.person }} {% if o.person.con_name %}&mdash; <strong>{{ o.person.con_name }}</strong>{% endif %} ({{o.type.name}})</li>
     # endfor
 </ol>
 # endblock

@@ -1,12 +1,12 @@
-# extends 'base.html'
-# set title = "Detail: " + member.name
+{% extends 'base.html' %}
+{% set title = "Detail: " + person.name %}
 
-# block right
+{% block right %}
 <table style="width: 100%;" id="cart">
     <thead>
         <tr><th colspan="4">Cart</th></tr>
         <tr>
-            <th class="subhead">Member</th>
+            <th class="subhead">Person</th>
             <th class="subhead">Type</th>
             <th class="subhead">Price</th>
             <th class="subhead">Del</th>
@@ -34,6 +34,7 @@
         {% endfor %}
     </tbody>
     <form action="{{ lib.url('convention.reg.views.checkout')}}" method="post">
+    {% csrf_token %}
     <tfoot>
         <tr>
             <th>Total</th>
@@ -55,8 +56,9 @@
 # endblock
 
 # block content
-<form action="{{ lib.url('convention.reg.views.person_view', member.pk) }}" method="post">
-# include 'reg_member_form.html'
+<form action="{{ lib.url('convention.reg.views.person_view', person.pk) }}" method="post">
+{% csrf_token %}
+{% include 'reg_member_form.html' %}
 </form>
 
 <br><br>
@@ -71,11 +73,11 @@
                 <th class="left">
                     {% if t.in_quantity %}
                         {{t.name}}
-                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 1)}}">Add 1</a>
-                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 5)}}">Add 5</a>
-                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk, 10)}}">Add 10</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", person.pk, t.pk, 1)}}">Add 1</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", person.pk, t.pk, 5)}}">Add 5</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", person.pk, t.pk, 10)}}">Add 10</a>
                     {% else %}
-                        <a href="{{ lib.url ("convention.reg.views.cart_add", member.pk, t.pk)}}">{{t.name}}</a>
+                        <a href="{{ lib.url ("convention.reg.views.cart_add", person.pk, t.pk)}}">{{t.name}}</a>
                     {% endif %}
                 </th>
                 <td class="right">${{t.price}}</td>

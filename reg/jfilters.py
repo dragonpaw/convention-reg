@@ -15,7 +15,7 @@ def filter_not_in_cart(context, types):
     new = list()
 
     # This is the current member being viewed.
-    member = context['member']
+    member = context['person']
 
     for type in types:
         # For types we are going to buy, or did buy, only show those that

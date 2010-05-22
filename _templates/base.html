@@ -3,12 +3,12 @@
 <html>
     <head>
         <title>{{ title }}</title>
-        <link rel="stylesheet" type="text/css" media="screen" href="/static/css/elastic.css" />
-        <link rel="stylesheet" type="text/css" media="screen" href="/static/css/main.css" />
-        <link rel="stylesheet" type="text/css" media="print" href="/static/css/elastic.print.css" />
-        <link rel="stylesheet" type="text/css" href="/static/css/sprite.css" />
-        <script src="/static/js/jquery.js" type="text/javascript" language="javascript" charset="utf-8"></script>
-        <script src="/static/js/elastic.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+        <link rel="stylesheet" type="text/css" media="screen" href="{{MEDIA_URL}}/css/elastic.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="{{MEDIA_URL}}/css/main.css" />
+        <link rel="stylesheet" type="text/css" media="print" href="{{MEDIA_URL}}/css/elastic.print.css" />
+        <link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/sprite.css" />
+        <script src="{{MEDIA_URL}}/js/jquery.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+        <script src="{{MEDIA_URL}}/js/elastic.js" type="text/javascript" language="javascript" charset="utf-8"></script>
     </head>
     <body>
         <div class="columns" style="padding:20px;">
@@ -22,6 +22,11 @@
                 </div>
                 <div class="elastic column">
                     <div class="container" >
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
                     {% block content %} {% endblock %}
                     </div>
                 </div>

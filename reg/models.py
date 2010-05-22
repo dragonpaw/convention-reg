@@ -10,6 +10,10 @@ color_list = colors.getAllNamedColors().keys()
 color_list.sort()
 
 COLOR_OPTIONS = [  (x, x) for x in color_list ]
+GATEWAYS = (
+    ('cash', "Cash/Check/Whatever."),
+    ('quantum', "Quantum Gateway. (Credit Card/EFT)"),
+)
 
 # Create your models here.
 class Event(models.Model):
@@ -143,7 +147,8 @@ class MembershipType(models.Model):
 
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=20)
-
+    gateway = models.CharField(max_length=20, choices=GATEWAYS, default='cash')
+    
     def __unicode__(self):
         return self.name
 
@@ -181,20 +186,21 @@ class MembershipSold(models.Model):
     )
 
     # Basic fields
-    member = models.ForeignKey(Person, related_name='memberships')
+    person = models.ForeignKey(Person, related_name='memberships')
     type = models.ForeignKey(MembershipType, related_name='members')
     badge_number = models.IntegerField(null=True, blank=True)
-    comment = models.CharField(max_length=500, blank=True, default='')
 
     # Payment info
     price = models.DecimalField(max_digits=6, decimal_places=2)
-    payment_method = models.ForeignKey(PaymentMethod, blank=True, null=True)
-    sold_by = models.ForeignKey('auth.User', editable=False, null=True)
-    sold_at = models.DateTimeField(auto_now_add=True, editable=False)
+    #comment = models.CharField(max_length=500, blank=True, default='')
+    #payment_method = models.ForeignKey(PaymentMethod, blank=True, null=True)
+    #sold_by = models.ForeignKey('auth.User', editable=False, null=True)
+    #sold_at = models.DateTimeField(auto_now_add=True, editable=False)
+    payment = models.ForeignKey('Payment', related_name='memberships')
 
     # Printing info
     needs_printed = models.BooleanField(default=True)
-    print_timestamp = models.DateTimeField('Time printing was requested')
+    print_timestamp = models.DateTimeField('Time printing was requested', blank=True)
 
     # Used by complex types
     state = models.CharField(choices=APPROVAL_CHOICES, default='pending', max_length=20)
@@ -205,11 +211,11 @@ class MembershipSold(models.Model):
 
     class Meta:
         verbose_name_plural = 'Sold: Memberships'
-        #unique_together = (('member', 'type'),)
-        ordering = ('member__name','type__name')
+        #unique_together = (('person', 'type'),) # Types with multiple can be sold twice.
+        ordering = ('person__name','type__name')
 
     def __unicode__(self):
-        return '%s: %s' % (self.member, self.type)
+        return '%s: %s' % (self.person, self.type)
 
     @property
     def event(self):
@@ -226,3 +232,41 @@ class MembershipSold(models.Model):
             self.print_timestamp = datetime.now()
 
         super(MembershipSold, self).save(*args, **kwargs)
+
+
+class Payment(models.Model):
+    UI_CHOICES = (
+        ('admin', 'Administrative interface'),
+        ('self','Self-Service UI'),
+        ('event', 'At-event registration'),
+        ('migration', 'Ported over from old transactions.')
+    )
+    
+    user = models.ForeignKey('auth.User', blank=True, null=True)
+    amount = models.DecimalField(max_digits=6, decimal_places=2)
+    method = models.ForeignKey(PaymentMethod, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ui_used = models.CharField(max_length=20, choices=UI_CHOICES)
+    comment = models.CharField(max_length=500, blank=True, default='')
+    authcode = models.CharField("Credit card gateway authorization code.", max_length=10, null=True, blank=True)
+    transaction_id = models.CharField("Credit card gateway transaction ID.", max_length=10, null=True, blank=True)
+    identifier = models.IntegerField("Check #, or partial CC #.", null=True, blank=True)
+
+    error_message = None
+
+    def __unicode__(self):
+        return "#%d: %s for $%s" % (self.id, self.method, self.amount)
+
+    def process(self, *args, **kwargs):
+        func_name = 'process_' + self.method.gateway
+        func = getattr(self, func_name, None)
+        if not func:
+            raise NotImplementedError('No such processing gateway known: %s' % self.method.gateway)
+        return func(*args, **kwargs)
+        
+    def process_cash(self, *args, **kwargs):
+        return True
+    
+    def process_quantum(self, *args, **kwargs):
+        raise NotImplementedError
+    

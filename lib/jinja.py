@@ -57,14 +57,15 @@ def import_module(name):
 # environment setup:
 #  the loader here searches "template dirs", plus any templates folder in any installed app
 #  autoescape set to true explicitly, because in Jinja2 it's off by defualt
-jenv = Environment(autoescape=False,
-                   line_statement_prefix='#',
-                   trim_blocks=True,
-                   #extensions=['jinja2.ext.do'],
-                   loader = ChoiceLoader(
-                        [FileSystemLoader(settings.TEMPLATE_DIRS)]
-                        + [PackageLoader(app) for app in settings.INSTALLED_APPS]
-                    )
+jenv = Environment(
+    autoescape=False,
+    line_statement_prefix='#',
+    trim_blocks=True,
+    extensions=['convention.lib.jextension.csrf_token'],
+    loader = ChoiceLoader(
+        [FileSystemLoader(settings.TEMPLATE_DIRS)]
+        + [PackageLoader(app) for app in settings.INSTALLED_APPS]
+    )
 )
 
 # Search for and load application specific functions, filters and tests.
@@ -120,7 +121,6 @@ def render_to_response( filename, context={}, request=None ):
     return HttpResponse( jrender( filename, context ) )
 
 def get_title(html):
-
         p = re.compile('<title[^>]*>(.*?)</title>', re.IGNORECASE)
         m = p.search(html)
         if m:
@@ -130,53 +130,30 @@ def get_title(html):
         # set your own default
         return "Email from DevOps."
 
-def simple_decorator(decorator):
-    """This decorator can be used to turn simple functions
-    into well-behaved decorators, so long as the decorators
-    are fairly simple. If a decorator expects a function and
-    returns a function (no descriptors), and if it doesn't
-    modify function attributes or docstring, then it is
-    eligible to use this. Simply apply @simple_decorator to
-    your decorator and it will automatically preserve the
-    docstring and function attributes of functions to which
-    it is applied."""
-    def new_decorator(f):
-        g = decorator(f)
-        g.__name__ = f.__name__
-        g.__doc__ = f.__doc__
-        g.__dict__.update(f.__dict__)
-        return g
-    # Now a few lines needed to make simple_decorator itself
-    # be a well-behaved decorator.
-    new_decorator.__name__ = decorator.__name__
-    new_decorator.__doc__ = decorator.__doc__
-    new_decorator.__dict__.update(decorator.__dict__)
-    return new_decorator
+def render(template):
+    """
+    http://djangosnippets.org/snippets/821/
+    
+    Decorator for Django views that sends returned dict to render_to_response function
+    with given template and RequestContext as context instance.
 
-class render(object):
-    '''A render decorator, based off of
-    http://uswaretech.com/blog/2009/06/understanding-decorators/
+    If view doesn't return dict then decorator simply returns output.
+    Additionally view can return two-tuple, which must contain dict as first
+    element and string with template name as second. This string will
+    override template name, given as parameter
 
-    If a dict is returned, it will be passed through the usual context
-    processors and then rendered via the template.
+    Parameters:
 
-    Any other object returned is passed back unaltered.
-    '''
-    def __init__(self, template_name):
-        self.template = template_name
+     - template: template name to use
+    """
+    def renderer(func):
+        def wrapper(request, *args, **kw):
+            output = func(request, *args, **kw)
+            if isinstance(output, (list, tuple)):
+                return render_to_response(output[1], output[0], request)
+            elif isinstance(output, dict):
+                return render_to_response(template, output, request)
+            return output
+        return wrapper
+    return renderer
 
-    def __call__(self, func, *args, **kwargs):
-        def wrapped_f(*args, **kwargs):
-            #print "Inside wrapped_f()"
-            #print "Decorator arguments:", self.arg1, self.arg2, self.arg3
-            out = func(*args, **kwargs)
-            if isinstance(out, dict):
-                return render_to_response(self.template, context=out, request=args[0])
-            else:
-                return out
-            #f(*args)
-            #print "After f(*args)"
-        wrapped_f.__doc__ = func.__doc__
-        wrapped_f.__dict__ = func.__dict__
-        wrapped_f.__name = func.__name__
-        return wrapped_f

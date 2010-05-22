@@ -3,6 +3,7 @@
 
 #block content
 <form method="post" action="{{ lib.url ('convention.reg.views.member_add') }}">
+{% csrf_token %}
 #include 'reg_member_form.html'
 </form>
 #endblock

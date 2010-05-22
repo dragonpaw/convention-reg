@@ -9,10 +9,33 @@ class AffiliationOptions(admin.ModelAdmin):
 
 class MembershipInline(admin.TabularInline):
     model = MembershipSold
+    readonly_fields = ('person','payment','price')
+    fields = ('person','type','badge_number','price','state','quantity','payment')
+
+class PaymentOptions(admin.ModelAdmin):
+    list_display = ('id', 'timestamp', 'method', 'amount', 'people')
+    search_fields = ('identifier','memberships__person__name')
+    
+    # Just about everything. Don't need people doctoring the evidence.
+    readonly_fields = (
+        'user','timestamp','method','amount','ui_used','authcode',
+        'transaction_id','identifier'
+    )
+    
+    def people(self, obj):
+        return ", ".join([p.person.name for p in obj.memberships.all()])
+        
+    ordering = ('-timestamp',)
+    inlines = (MembershipInline,)
 
 
 class MembershipTypeInline(admin.TabularInline):
     model = MembershipType
+
+
+class PaymentMethodOptions(admin.ModelAdmin):
+    model = PaymentMethod
+    list_display = ('name', 'gateway')
 
 
 class EventOptions(admin.ModelAdmin):
@@ -22,10 +45,7 @@ class EventOptions(admin.ModelAdmin):
             'name',  'to_print', 'badge_number',
         ), }),
     )
-
-    inlines = (
-        MembershipTypeInline,
-    )
+    inlines = (MembershipTypeInline,)
 
 
 class PersonOptions(admin.ModelAdmin):
@@ -38,12 +58,8 @@ class PersonOptions(admin.ModelAdmin):
         }),
     )
     search_fields = ('name', 'con_name', 'email')
-
     list_display = ('name', 'con_name', 'email', 'affiliation')
-
-    inlines = (
-        MembershipInline,
-    )
+    inlines = (MembershipInline,)
 
 
 class MembershipTypeOptions(admin.ModelAdmin):
@@ -54,29 +70,38 @@ class MembershipTypeOptions(admin.ModelAdmin):
 
 
 class MembershipSoldOptions(admin.ModelAdmin):
+    raw_id_fields = ('person',)
+    search_fields = ('person__name',)
+    list_display = (
+        'person',
+        'type',
+        'badge_number',
+        'needs_printed',
+        'state',
+        'payment',
+    )
+    fieldsets = (
+        (None, {'fields': (
+            'person', 'type', 'badge_number', 'quantity', 'state',
+        ), }),
+        ('Payment Info', {
+            'fields': ('price', 'payment', 'needs_printed'),
+        }),
+    )
+    list_filter = ('needs_printed', 'type', 'state')
+    readonly_fields = ('person','payment','price')
 
     def reprint(modeladmin, request, queryset):
         queryset.update( needs_printed=True, print_timestamp=datetime.now() )
     reprint.short_description = 'Mark selected as needing printing'
 
-    raw_id_fields = ('member',)
-    search_fields = ('member__name',)
-    list_display = (
-        'member',
-        'type',
-        'badge_number',
-        'needs_printed',
-        'sold_by',
-        'sold_at',
-        'state',
-    )
-    list_filter = ('needs_printed', 'type', 'state')
     actions = [reprint]
 
 
 admin.site.register(Affiliation, AffiliationOptions)
-admin.site.register(PaymentMethod)
+admin.site.register(PaymentMethod, PaymentMethodOptions)
 admin.site.register(Event, EventOptions)
 admin.site.register(Person, PersonOptions)
+admin.site.register(Payment, PaymentOptions)
 #admin.site.register(MembershipType, MembershipTypeOptions)
 admin.site.register(MembershipSold, MembershipSoldOptions)

@@ -6,26 +6,28 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
+from django.contrib import messages
+from django.db import transaction
 from django.http import HttpResponse, Http404
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
 from convention.lib.jinja import render, render_to_response
-from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod
+from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
 from convention.reg.forms import PaymentForm, MemberForm
 from convention.reg.pdf import pos, start
 
-def _process_member_form(request, member=None):
+def _process_member_form(request, person=None):
     if request.method == 'POST':
-        if member:
-            form = MemberForm(request.POST, instance=member)
+        if person:
+            form = MemberForm(request.POST, instance=person)
         else:
             form = MemberForm(request.POST)
         if form.is_valid():
-            form.member = form.save() # Save it into the form so it can be found.
+            form.person = form.save() # Save it into the form so it can be found.
     else:
-        if member:
-            return MemberForm(instance=member)
+        if person:
+            return MemberForm(instance=person)
         else:
             return MemberForm()
 
@@ -33,6 +35,7 @@ def _process_member_form(request, member=None):
 
 
 @permission_required('reg.add_person')
+@render('reg_member_add.html')
 def person_add(request):
     form = _process_member_form(request)
 
@@ -44,31 +47,31 @@ def person_add(request):
         print form.errors
 
     if request.method == 'POST' and form.is_valid():
-        return redirect(person_view, form.member.pk)
+        return redirect(person_view, form.person.pk)
     else:
-        return render_to_response('reg_member_add.html',
-                                  { 'form': form },
-                                  request)
+        return { 'form': form }
+
 
 @permission_required('reg.change_person')
 @render('reg_member_list.html')
 def people_list(request):
     return { 'members': Person.objects.all() }
 
+
 @permission_required('reg.change_person')
 @render('reg_member_view.html')
 def person_view(request, id):
-    member = get_object_or_404(Person, pk=id)
+    person = get_object_or_404(Person, pk=id)
     current = list()
 
-    memberships = member.memberships.all()
+    memberships = person.memberships.all()
     for m in memberships:
         current.append(m.type)
 
-    form = _process_member_form(request, member)
+    form = _process_member_form(request, person)
 
     return {
-        'member': member,
+        'person': person,
         'form': form,
         'payment_form': PaymentForm(),
         'memberships': memberships,
@@ -139,6 +142,7 @@ def cart_add(request, person_id, type_id, qty=1):
 
 
 @permission_required('reg.add_membership')
+#@transaction.commit_manually
 def checkout(request):
     """Perform a checkout opertion.
 
@@ -149,45 +153,67 @@ def checkout(request):
     form = PaymentForm(request.POST)
 
     if not form.is_valid():
-        return render_to_response(
-            'error.html',
-            {'error': form.errors},
-            request
-        )
+        transaction.rollback()
+        messages.error(request, form.errors)
+        return redirect(request.META['HTTP_REFERER'])
 
     cart = _get_cart(request)
 
     # First, some sanity checks.
+    error = False
     for person in cart:
         for type in cart[person]:
             if cart[person][type] and person.memberships.filter(type=type).count() and not type.in_quantity:
-                return render_to_response(
-                    'error.html',
-                    { 'error': 'That membership has already been sold.'},
-                    request
-                )
+                messages.error(request, 'That membership has already been sold.')
+                error = True
+    if error:
+        transaction.rollback()
+        return redirect(request.META['HTTP_REFERER'])
 
     # OK, now safe to commit.
+    total = Decimal(0)
+    payment = Payment()
+    payment.user = request.user
+    payment.method = form.cleaned_data['method']
+    payment.comment = form.cleaned_data['comment']
+    payment.ui_used = 'event'
+    payment.amount = 0 # Will be changed below, but we need to save to link to the memberships.
+    payment.save()
+    
     for person in cart:
         for type in cart[person]:
-
             # Comes from the use of defaultdicts.
             if cart[person][type] == 0:
                 continue
 
             membership = MembershipSold()
-            membership.member = person
+            membership.person = person
             membership.type = type
             membership.price = type.price * cart[person][type]
-            membership.payment_method = form.cleaned_data['method']
-            membership.sold_by = request.user
-            membership.comment = form.cleaned_data['comment']
             membership.quantity = cart[person][type]
+            membership.payment = payment
             membership.save()
+            
+            total += membership.price
+    
+    # Update the total.
+    payment.amount = total
+    payment.save()
+    
+    if payment.process():
+        _cart_empty(request)
+        messages.success(request, "Payment accepted")
+        transaction.commit()
+        return redirect(print_pending)
+    else:
+        if payment.error_message:
+            messages.error(request, "Payment failed: %s" % payment.error_message)
+        else:
+            messages.error(request, "Payment failed. (Unknown reason.)")
+        transaction.rollback()
+        return redirect(person_view, person.pk)
 
-    _cart_empty(request)
 
-    return redirect(print_pending)
 
 @permission_required('reg.print_badges')
 @render('reg_pending.html')
@@ -199,6 +225,7 @@ def print_pending(request):
 @render('reg_index.html')
 def index(request):
     return {}
+
 
 @render('reg_member_report.html')
 def report_member(request, slug=None, public_only=False):
@@ -262,9 +289,9 @@ def print_pdf(request, pages=None):
 
         # Colored affiliation bar
         tc = colors.toColor('black')
-        if m.member.affiliation:
-            c = colors.toColor(str(m.member.affiliation.color))
-            tc = colors.toColor(str(m.member.affiliation.text_color))
+        if m.person.affiliation:
+            c = colors.toColor(str(m.person.affiliation.color))
+            tc = colors.toColor(str(m.person.affiliation.text_color))
             p.setFillColor( c )
             p.rect(
                 pos['affiliation']['x'],
@@ -276,10 +303,10 @@ def print_pdf(request, pages=None):
             p.setFont(pos['affiliation']['font'], pos['affiliation']['font_size'])
             p.drawCentredString(pos['affiliation']['text_x'],
                                 pos['affiliation']['text_y'],
-                                m.member.affiliation.tag)
+                                m.person.affiliation.tag)
 
         # Age stripe
-        age = m.member.age_code()
+        age = m.person.age_code()
         if age in ('minor', '18'):
             if age == 'minor':
                 p.setFillColor(colors.red)
@@ -294,11 +321,11 @@ def print_pdf(request, pages=None):
             p.drawCentredString(pos['age']['text_x'], pos['age']['text_y'], 'O')
 
         # Name(s)
-        if m.member.con_name:
-            name1 = m.member.con_name
-            name2 = m.member.name
+        if m.person.con_name:
+            name1 = m.person.con_name
+            name2 = m.person.name
         else:
-            name1 = m.member.name
+            name1 = m.person.name
             name2 = None
         p.setFillColor(colors.black)
         p.setFont(pos['name1']['font'], pos['name1']['font_size'])
@@ -314,10 +341,10 @@ def print_pdf(request, pages=None):
             p.drawString(pos['type_code']['x'], pos['type_code']['y'], m.type.code)
 
         # City, State
-        if m.member.country == 'USA':
-            city_state = "{0}, {1}".format(m.member.city, m.member.state)
+        if m.person.country == 'USA':
+            city_state = "{0}, {1}".format(m.person.city, m.person.state)
         else:
-            city_state = "{0}, {1}".format(m.member.city, m.member.country)
+            city_state = "{0}, {1}".format(m.person.city, m.person.country)
         p.setFillColor(colors.black)
         p.setFont(pos['city_state']['font'], pos['city_state']['font_size'])
         p.drawCentredString(pos['city_state']['x'], pos['city_state']['y'], city_state)
