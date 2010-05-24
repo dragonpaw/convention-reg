@@ -1,19 +1,16 @@
 from datetime import date, timedelta, datetime
+import logging
 from reportlab.lib import colors
+import urllib, urllib2
 
+from django.conf import settings
 from django.db import models
 from django.template.defaultfilters import slugify
 
-from convention import settings
-
 color_list = colors.getAllNamedColors().keys()
 color_list.sort()
-
 COLOR_OPTIONS = [  (x, x) for x in color_list ]
-GATEWAYS = (
-    ('cash', "Cash/Check/Whatever."),
-    ('quantum', "Quantum Gateway. (Credit Card/EFT)"),
-)
+
 
 # Create your models here.
 class Event(models.Model):
@@ -146,11 +143,83 @@ class MembershipType(models.Model):
 
 
 class PaymentMethod(models.Model):
+    GATEWAYS = (
+        ('cash', "Cash/Check/Whatever."),
+        ('quantum', "Quantum Gateway. (Credit Card/EFT)"),
+    )
+
     name = models.CharField(max_length=20)
     gateway = models.CharField(max_length=20, choices=GATEWAYS, default='cash')
-    
+
+    class Meta:
+        ordering = ('name',)
+
     def __unicode__(self):
         return self.name
+
+    def process(self, payment, form):
+        func_name = 'process_' + self.gateway
+        func = getattr(self, func_name, None)
+        if not func:
+            raise NotImplementedError('No such processing gateway known: %s' % self.method.gateway)
+        return func(payment, form)
+
+    def process_cash(self, payment, form):
+        return True
+
+    def process_quantum(self, payment, form):
+        log = logging.get_logger('reg.PaymentMethod.process_quantum')
+
+        values = {
+            'gwlogin': settings.LOCAL_SETTINGS.get('quantum_gateway','login'),
+            'RestrictKey': settings.LOCAL_SETTINGS.get('quantum_gateway','key'),
+
+            'trans_method': 'cc',
+            'trans_type': settings.LOCAL_SETTINGS.get('quantum_gateway','transaction_type'),
+
+            'amount': str(payment.amount),
+
+            #'BNAME': form.card_name,
+            #'BADDR1': form.address,
+            'BZIP1': kwargs['zip'],
+            #'BCUST_EMAIL': form.email,
+
+            #'override_email_customer': 'N',
+            #'override_trans_customer': 'N',
+        }
+
+        if settings.LOCAL_SETTINGS.get('quantum_gateway','use_transparent'):
+            url = 'https://secure.quantumgateway.com/cgi/tqgwdbe.php'
+            values.update({
+                'ccnum': form.number,
+                'ccmo': "%02d" % form.month,
+                'ccyr': form.year[-2:],
+                'CVV2': form.ccv,
+                'CVVtype': '1', # Is being passed.
+            })
+        else:
+            url = 'https://secure.quantumgateway.com/cgi/qgwdbe.php'
+            raise NotImplementedError('Quantum Gateway Interactive not yet supported.')
+
+        req = urllib2.Request(url, urllib.urlencode(values))
+        response = urllib2.urlopen(req)
+        reply = response.read()
+        logging.debug(reply)
+        #Response Sequence: Transaction Status, Auth Code, Transaction ID, AVS Response, CVV2 Response, Maxmind Score, Decline Reason, Decline Error Number
+        #"APPROVED","019452","652145","Y","M","0.6"
+        #"DECLINED","019452","652145","N","N","0.6","INVALID EXP DATE","205"
+        APPROVED, AUTHCODE, TRANSACTION_ID, AVS, CVV2, MAXMIND, DECLINE_REASON, DECLINE_CODE = range(0,8)
+        reply = [x.replace('"','') for x in reply.split(',')]
+
+        if reply[APPROVED] != 'APPROVED':
+            payment.error_message = "%s (%s)" % (reply[DECLINE_REASON], reply[DECLINE_CODE])
+            return False
+        else:
+            payment.authcode = reply[AUTHCODE]
+            payment.transaction_id = reply[TRANSACTION_ID]
+            payment.identifier = kwargs['number'][-4:]
+            payment.save()
+            return True
 
 
 class Affiliation(models.Model):
@@ -192,10 +261,6 @@ class MembershipSold(models.Model):
 
     # Payment info
     price = models.DecimalField(max_digits=6, decimal_places=2)
-    #comment = models.CharField(max_length=500, blank=True, default='')
-    #payment_method = models.ForeignKey(PaymentMethod, blank=True, null=True)
-    #sold_by = models.ForeignKey('auth.User', editable=False, null=True)
-    #sold_at = models.DateTimeField(auto_now_add=True, editable=False)
     payment = models.ForeignKey('Payment', related_name='memberships')
 
     # Printing info
@@ -211,15 +276,11 @@ class MembershipSold(models.Model):
 
     class Meta:
         verbose_name_plural = 'Sold: Memberships'
-        #unique_together = (('person', 'type'),) # Types with multiple can be sold twice.
         ordering = ('person__name','type__name')
+        #unique_together = (('person', 'type'),) # Types with multiple can be sold twice.
 
     def __unicode__(self):
         return '%s: %s' % (self.person, self.type)
-
-    @property
-    def event(self):
-        return self.type.event
 
     def save(self, *args, **kwargs):
         if not self.badge_number and self.type.numbered:
@@ -233,6 +294,10 @@ class MembershipSold(models.Model):
 
         super(MembershipSold, self).save(*args, **kwargs)
 
+    @property
+    def event(self):
+        return self.type.event
+
 
 class Payment(models.Model):
     UI_CHOICES = (
@@ -241,7 +306,7 @@ class Payment(models.Model):
         ('event', 'At-event registration'),
         ('migration', 'Ported over from old transactions.')
     )
-    
+
     user = models.ForeignKey('auth.User', blank=True, null=True)
     amount = models.DecimalField(max_digits=6, decimal_places=2)
     method = models.ForeignKey(PaymentMethod, blank=True, null=True)
@@ -257,16 +322,5 @@ class Payment(models.Model):
     def __unicode__(self):
         return "#%d: %s for $%s" % (self.id, self.method, self.amount)
 
-    def process(self, *args, **kwargs):
-        func_name = 'process_' + self.method.gateway
-        func = getattr(self, func_name, None)
-        if not func:
-            raise NotImplementedError('No such processing gateway known: %s' % self.method.gateway)
-        return func(*args, **kwargs)
-        
-    def process_cash(self, *args, **kwargs):
-        return True
-    
-    def process_quantum(self, *args, **kwargs):
-        raise NotImplementedError
-    
+    def process(self, form):
+        return self.method.process(payment=self, form=form)

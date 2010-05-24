@@ -70,6 +70,7 @@ def update_file(filename):
         '# Be aware, the server rewrites this file on startup.\n',
         '# As such, new options will be added with default values.\n',
         '# Any options removed or unknown will be deleted. As will any extra comments.\n',
+        '#   Example: Delete the secret_key line, and a new one will be genreated.\n',
         '# This also means that sections, and options can move around.\n',
     ])
     config.write(f)

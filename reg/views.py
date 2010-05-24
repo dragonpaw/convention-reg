@@ -179,7 +179,7 @@ def checkout(request):
     payment.ui_used = 'event'
     payment.amount = 0 # Will be changed below, but we need to save to link to the memberships.
     payment.save()
-    
+
     for person in cart:
         for type in cart[person]:
             # Comes from the use of defaultdicts.
@@ -193,14 +193,14 @@ def checkout(request):
             membership.quantity = cart[person][type]
             membership.payment = payment
             membership.save()
-            
+
             total += membership.price
-    
+
     # Update the total.
     payment.amount = total
     payment.save()
-    
-    if payment.process():
+
+    if payment.process(form=form):
         _cart_empty(request)
         messages.success(request, "Payment accepted")
         transaction.commit()
@@ -263,6 +263,7 @@ def approvals(request, slug):
         type__event=event,
         type__approval_needed=True,
     )
+
     return {
         'title': title,
         'objects': q,
