@@ -1,25 +1,34 @@
 # Django settings for convention project.
 import os
+import ConfigParser
 
-DEBUG = True
-TEMPLATE_DEBUG = False # Jinja2 templating in use.
-
-ADMINS = (
-    # ('Your Name', 'your_email@domain.com'),
-)
+from convention.lib.management.commands.make_configfile import update_file
 
 ROOT_DIR = os.path.dirname(__file__)
 STATIC_DIR = os.path.join(ROOT_DIR, '_static')
 UPLOAD_DIR = os.path.join(STATIC_DIR, 'uploaded')
 
+CONFIG_FILE = os.path.join(ROOT_DIR, 'config.ini')
+LOCAL_CONFIG = update_file(CONFIG_FILE)
+
+DEBUG = LOCAL_CONFIG.getboolean('general', 'debugging')
+TEMPLATE_DEBUG = False # Jinja2 templating in use.
+
+ADMINS = (
+    # ('Your Name', 'your_email@domain.com'),
+)
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = 'mysql'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'convention'             # Or path to database file if using sqlite3.
-DATABASE_USER = 'convention'             # Not used with sqlite3.
-DATABASE_PASSWORD = 'test'         # Not used with sqlite3.
-DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
-DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+DATABASE_ENGINE = LOCAL_CONFIG.get('database', 'engine')
+DATABASE_NAME = LOCAL_CONFIG.get('database', 'name')
+DATABASE_USER = LOCAL_CONFIG.get('database', 'user')
+DATABASE_PASSWORD = LOCAL_CONFIG.get('database', 'password')
+DATABASE_HOST = LOCAL_CONFIG.get('database', 'server_host')
+DATABASE_PORT = LOCAL_CONFIG.get('database', 'server_port')
+
+EMAIL_ERROR_SUBJECT = LOCAL_CONFIG.get('email', 'error_subject')
+EMAIL_HOST = LOCAL_CONFIG.get('email', 'server')
+DEFAULT_MAIL_FROM = LOCAL_CONFIG.get('email', 'from_address')
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -56,7 +65,7 @@ LOGIN_REDIRECT_URL='/'
 ADMIN_MEDIA_PREFIX = '/media/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'u&+$9=bpk@gn(21w!mpqbkx2!e2p^1!ens3cvh98!8h3orywbp'
+SECRET_KEY = LOCAL_CONFIG.get('security', 'secret_key')
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

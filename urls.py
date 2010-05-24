@@ -21,3 +21,7 @@ urlpatterns = patterns('',
     (r'^static/(?P<path>.*)$', 'django.views.static.serve',
         {'document_root': settings.STATIC_DIR})
 )
+
+# Gotta put it somewhere, and not in settings.py.
+from convention.lib.setup_log_handler import setup_handler
+setup_handler()

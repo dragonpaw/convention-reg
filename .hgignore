@@ -1,2 +1,4 @@
 syntax: glob
 *.pyc
+config.ini
+*.log
