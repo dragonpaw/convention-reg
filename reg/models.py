@@ -1,11 +1,12 @@
 from datetime import date, timedelta, datetime
 import logging
 from reportlab.lib import colors
-import urllib, urllib2
 
 from django.conf import settings
 from django.db import models
 from django.template.defaultfilters import slugify
+
+from convention.lib import payment_gateways
 
 color_list = colors.getAllNamedColors().keys()
 color_list.sort()
@@ -157,69 +158,66 @@ class PaymentMethod(models.Model):
     def __unicode__(self):
         return self.name
 
-    def process(self, payment, form):
+    def process(self, payment, form, request):
         func_name = 'process_' + self.gateway
         func = getattr(self, func_name, None)
         if not func:
             raise NotImplementedError('No such processing gateway known: %s' % self.method.gateway)
-        return func(payment, form)
+        return func(payment, form, request)
 
-    def process_cash(self, payment, form):
+    def process_cash(self, payment, form, request):
         return True
 
-    def process_quantum(self, payment, form):
-        log = logging.get_logger('reg.PaymentMethod.process_quantum')
+    def process_quantum(self, payment, form, request):
+        log = logging.getLogger('reg.PaymentMethod.process_quantum')
 
-        values = {
-            'gwlogin': settings.LOCAL_SETTINGS.get('quantum_gateway','login'),
-            'RestrictKey': settings.LOCAL_SETTINGS.get('quantum_gateway','key'),
+        #def quantum_gateway(login, key, amount, zip, ip, number, month, year, cvv=None, transparent=True, trans_type=None):
 
-            'trans_method': 'cc',
-            'trans_type': settings.LOCAL_SETTINGS.get('quantum_gateway','transaction_type'),
+        login = settings.LOCAL_SETTINGS.get('quantum_gateway','login')
+        key = settings.LOCAL_SETTINGS.get('quantum_gateway','key')
 
-            'amount': str(payment.amount),
+        trans_type = settings.LOCAL_SETTINGS.get('quantum_gateway','transaction_type')
 
-            #'BNAME': form.card_name,
-            #'BADDR1': form.address,
-            'BZIP1': kwargs['zip'],
-            #'BCUST_EMAIL': form.email,
+        amount = payment.amount
 
-            #'override_email_customer': 'N',
-            #'override_trans_customer': 'N',
-        }
+        zip = form.cleaned_data['zip']
+
+        ip = request.META['REMOTE_ADDR']
+
+        #'BNAME': form.card_name,
+        #'BADDR1': form.address,
+        #'BCUST_EMAIL': form.email,
+
+        #'override_email_customer': 'N',
+        #'override_trans_customer': 'N',
 
         if settings.LOCAL_SETTINGS.get('quantum_gateway','use_transparent'):
-            url = 'https://secure.quantumgateway.com/cgi/tqgwdbe.php'
-            values.update({
-                'ccnum': form.number,
-                'ccmo': "%02d" % form.month,
-                'ccyr': form.year[-2:],
-                'CVV2': form.ccv,
-                'CVVtype': '1', # Is being passed.
-            })
+            transparent = True
+            number = form.cleaned_data['number']
+            month = form.cleaned_data['month']
+            year = form.cleaned_data['year']
+            cvv = form.cleaned_data['cvv']
         else:
-            url = 'https://secure.quantumgateway.com/cgi/qgwdbe.php'
-            raise NotImplementedError('Quantum Gateway Interactive not yet supported.')
+            transparent = False
+            number = None
+            month = None
+            year = None
+            cvv = None
 
-        req = urllib2.Request(url, urllib.urlencode(values))
-        response = urllib2.urlopen(req)
-        reply = response.read()
-        logging.debug(reply)
-        #Response Sequence: Transaction Status, Auth Code, Transaction ID, AVS Response, CVV2 Response, Maxmind Score, Decline Reason, Decline Error Number
-        #"APPROVED","019452","652145","Y","M","0.6"
-        #"DECLINED","019452","652145","N","N","0.6","INVALID EXP DATE","205"
-        APPROVED, AUTHCODE, TRANSACTION_ID, AVS, CVV2, MAXMIND, DECLINE_REASON, DECLINE_CODE = range(0,8)
-        reply = [x.replace('"','') for x in reply.split(',')]
-
-        if reply[APPROVED] != 'APPROVED':
-            payment.error_message = "%s (%s)" % (reply[DECLINE_REASON], reply[DECLINE_CODE])
-            return False
-        else:
-            payment.authcode = reply[AUTHCODE]
-            payment.transaction_id = reply[TRANSACTION_ID]
-            payment.identifier = kwargs['number'][-4:]
+        try:
+            auth, id = payment_gateways.quantum_gateway(
+                login, key, amount, zip=zip, ip=ip,
+                number=number, month=month, year=year, cvv=cvv,
+                transparent=transparent, trans_type=trans_type
+            )
+            payment.authcode = auth
+            payment.transaction_id = id
+            payment.identifier = number[-4:]
             payment.save()
             return True
+        except payment_gateways.PaymentDeclinedError, e:
+            payment.error_message = str(e)
+            return False
 
 
 class Affiliation(models.Model):
@@ -322,5 +320,5 @@ class Payment(models.Model):
     def __unicode__(self):
         return "#%d: %s for $%s" % (self.id, self.method, self.amount)
 
-    def process(self, form):
-        return self.method.process(payment=self, form=form)
+    def process(self, form, request):
+        return self.method.process(payment=self, form=form, request=request)

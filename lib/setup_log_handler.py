@@ -6,13 +6,13 @@ def setup_handler():
     if len(logging.getLogger('').handlers) != 0:
         return
 
-    if not settings.LOCAL_CONFIG.getboolean('log','enabled'):
+    if not settings.LOCAL_SETTINGS.getboolean('log','enabled'):
         return
 
     root = logging.getLogger('')
 
     handler = logging.handlers.RotatingFileHandler(
-        settings.LOCAL_CONFIG.get('log','file'),
+        settings.LOCAL_SETTINGS.get('log','file'),
         maxBytes=500000, backupCount=2)
     handler.setLevel(logging.DEBUG)
 

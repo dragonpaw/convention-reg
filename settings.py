@@ -9,9 +9,9 @@ STATIC_DIR = os.path.join(ROOT_DIR, '_static')
 UPLOAD_DIR = os.path.join(STATIC_DIR, 'uploaded')
 
 CONFIG_FILE = os.path.join(ROOT_DIR, 'config.ini')
-LOCAL_CONFIG = update_file(CONFIG_FILE)
+LOCAL_SETTINGS = update_file(CONFIG_FILE)
 
-DEBUG = LOCAL_CONFIG.getboolean('general', 'debugging')
+DEBUG = LOCAL_SETTINGS.getboolean('general', 'debugging')
 TEMPLATE_DEBUG = False # Jinja2 templating in use.
 
 ADMINS = (
@@ -19,16 +19,16 @@ ADMINS = (
 )
 MANAGERS = ADMINS
 
-DATABASE_ENGINE = LOCAL_CONFIG.get('database', 'engine')
-DATABASE_NAME = LOCAL_CONFIG.get('database', 'name')
-DATABASE_USER = LOCAL_CONFIG.get('database', 'user')
-DATABASE_PASSWORD = LOCAL_CONFIG.get('database', 'password')
-DATABASE_HOST = LOCAL_CONFIG.get('database', 'server_host')
-DATABASE_PORT = LOCAL_CONFIG.get('database', 'server_port')
+DATABASE_ENGINE = LOCAL_SETTINGS.get('database', 'engine')
+DATABASE_NAME = LOCAL_SETTINGS.get('database', 'name')
+DATABASE_USER = LOCAL_SETTINGS.get('database', 'user')
+DATABASE_PASSWORD = LOCAL_SETTINGS.get('database', 'password')
+DATABASE_HOST = LOCAL_SETTINGS.get('database', 'server_host')
+DATABASE_PORT = LOCAL_SETTINGS.get('database', 'server_port')
 
-EMAIL_ERROR_SUBJECT = LOCAL_CONFIG.get('email', 'error_subject')
-EMAIL_HOST = LOCAL_CONFIG.get('email', 'server')
-DEFAULT_MAIL_FROM = LOCAL_CONFIG.get('email', 'from_address')
+EMAIL_ERROR_SUBJECT = LOCAL_SETTINGS.get('email', 'error_subject')
+EMAIL_HOST = LOCAL_SETTINGS.get('email', 'server')
+DEFAULT_MAIL_FROM = LOCAL_SETTINGS.get('email', 'from_address')
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -65,7 +65,7 @@ LOGIN_REDIRECT_URL='/'
 ADMIN_MEDIA_PREFIX = '/media/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = LOCAL_CONFIG.get('security', 'secret_key')
+SECRET_KEY = LOCAL_SETTINGS.get('security', 'secret_key')
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

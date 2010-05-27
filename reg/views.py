@@ -142,7 +142,7 @@ def cart_add(request, person_id, type_id, qty=1):
 
 
 @permission_required('reg.add_membership')
-#@transaction.commit_manually
+@transaction.commit_on_success
 def checkout(request):
     """Perform a checkout opertion.
 
@@ -200,7 +200,7 @@ def checkout(request):
     payment.amount = total
     payment.save()
 
-    if payment.process(form=form):
+    if payment.process(form=form, request=request):
         _cart_empty(request)
         messages.success(request, "Payment accepted")
         transaction.commit()

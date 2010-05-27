@@ -93,3 +93,4 @@ class PaymentForm(forms.Form):
             for field in ('number', 'month', 'year', 'cvv', 'zip'):
                 if not cleaned.get(field):
                     self._errors[field] = self.error_class(['Required for CC processing.'])
+        return cleaned
