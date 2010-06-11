@@ -13,23 +13,24 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
 from convention.lib.jinja import render, render_to_response
+from convention.reg import forms
 from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
-from convention.reg.forms import PaymentForm, MemberForm
 from convention.reg.pdf import pos, start
 
 def _process_member_form(request, person=None):
     if request.method == 'POST':
         if person:
-            form = MemberForm(request.POST, instance=person)
+            form = forms.MemberForm(request.POST, instance=person)
         else:
-            form = MemberForm(request.POST)
+            form = forms.MemberForm(request.POST)
         if form.is_valid():
             form.person = form.save() # Save it into the form so it can be found.
+            messages.success(request,'{0} updated.'.format(person))
     else:
         if person:
-            return MemberForm(instance=person)
+            return forms.MemberForm(instance=person)
         else:
-            return MemberForm()
+            return forms.MemberForm()
 
     return form
 
@@ -55,7 +56,15 @@ def person_add(request):
 @permission_required('reg.change_person')
 @render('reg_member_list.html')
 def people_list(request):
-    return { 'members': Person.objects.all() }
+    if 'payment_form' in request.session and request.session['payment_form']:
+        payment_form = request.session['payment_form']
+    else:
+        payment_form = forms.PaymentForm()
+    return {
+        'people': Person.objects.all(),
+        'payment_form': payment_form,
+        'cart': _get_cart(request),
+    }
 
 
 @permission_required('reg.change_person')
@@ -70,12 +79,19 @@ def person_view(request, id):
 
     form = _process_member_form(request, person)
 
+    if 'payment_form' in request.session and request.session['payment_form']:
+        payment_form = request.session['payment_form']
+    else:
+        payment_form = forms.PaymentForm()
+
     return {
         'person': person,
         'form': form,
-        'payment_form': PaymentForm(),
+        'payment_form': payment_form,
         'memberships': memberships,
         'current_events': current,
+        'cart': _get_cart(request),
+        'is_selfserve': False, # used to show a different cart view for self serve.
     }
 
 
@@ -111,15 +127,18 @@ def _cart(request, person, type, qty=1):
             pass
 
     total = Decimal(0)
+    quantity = 0
     for p in cart:
         for t in cart[p]:
             total += (t.price * cart[p][t])
-    request.session['total'] = total
+            quantity += 1
+    request.session['cart_total'] = total
+    request.session['cart_quantity'] = quantity
 
 
 def _cart_empty(request):
-    del request.session['memberships']
-    del request.session['total']
+    del request.session['cart_total']
+    del request.session['cart_total']
 
 
 @permission_required('reg.add_membership')
@@ -128,17 +147,20 @@ def cart_remove(request, person_id, type_id):
     type = MembershipType.objects.get(pk=type_id)
 
     _cart(request, person, type, 0)
-    return redirect(person_view, person.pk)
+    return redirect(request.META['HTTP_REFERER'])
 
 
 @permission_required('reg.add_membership')
-def cart_add(request, person_id, type_id, qty=1):
+def cart_add(request, person_id=None, type_id=None, qty=1):
     person = Person.objects.get(pk=person_id)
     type = MembershipType.objects.get(pk=type_id)
     qty = int(qty) # If passed in from URL, will be unicode.
 
     _cart(request, person, type, qty)
-    return redirect(person_view, person.pk)
+    if 'next' in request.POST:
+        return redirect(request.POST['next'])
+    else:
+        return redirect(request.META['HTTP_REFERER'])
 
 
 @permission_required('reg.add_membership')
@@ -150,11 +172,12 @@ def checkout(request):
     record will be created, showing the additional quantity. (This is
     intentional so that there will be proper logging.) """
 
-    form = PaymentForm(request.POST)
+    form = forms.PaymentForm(request.POST)
 
     if not form.is_valid():
         transaction.rollback()
         messages.error(request, form.errors)
+        request.session['payment_form'] = form
         return redirect(request.META['HTTP_REFERER'])
 
     cart = _get_cart(request)
@@ -168,6 +191,7 @@ def checkout(request):
                 error = True
     if error:
         transaction.rollback()
+        request.session['payment_form'] = form
         return redirect(request.META['HTTP_REFERER'])
 
     # OK, now safe to commit.
@@ -204,6 +228,7 @@ def checkout(request):
         _cart_empty(request)
         messages.success(request, "Payment accepted")
         transaction.commit()
+        del request.session['payment_form']
         return redirect(print_pending)
     else:
         if payment.error_message:
@@ -211,6 +236,7 @@ def checkout(request):
         else:
             messages.error(request, "Payment failed. (Unknown reason.)")
         transaction.rollback()
+        request.session['payment_form'] = form
         return redirect(person_view, person.pk)
 
 
@@ -227,30 +253,28 @@ def index(request):
     return {}
 
 
-@render('reg_member_report.html')
+@render('reg_member_list.html')
 def report_member(request, slug=None, public_only=False):
     if slug:
         event = Event.objects.get(slug=slug)
-        title = event.name
     else:
         event = None
-        title = "Members"
 
     if event:
-        q = Person.objects.filter(memberships__type__event=event)
+        q = Person.objects.filter(memberships__type__event=event).distinct()
     else:
         q = Person.objects.all()
 
     if public_only:
         q = q.filter(public=True)
-        title += "(Public)"
     else:
         if not request.user.has_perm('reg.change_member'):
             raise Http404
 
     return {
-        'title': title,
-        'objects': q,
+        'event': event,
+        'people': q,
+        'is_public': public_only,
     }
 
 
@@ -265,9 +289,107 @@ def approvals(request, slug):
     )
 
     return {
-        'title': title,
+        'event': event,
         'objects': q,
     }
+
+
+@render('reg_selfserve_index.html')
+def selfserve_index(request):
+    form = forms.SelfServePaymentForm()
+    return {
+        'cart': _get_cart(request),
+        'payment_form': form,
+        'is_selfserve': True,
+    }
+
+
+@render('reg_selfserve_add_email.html')
+def selfserve_add_email(request):
+    if request.method == 'GET':
+        return {}
+    else:
+        email = request.POST['email']
+        try:
+            person = Person.objects.get(email=email)
+            request.session['selfserve_person'] = person.pk
+            return redirect(selfserve_add_membership)
+        except Person.DoesNotExist:
+            request.session['selfserve_email'] = email
+            return redirect(selfserve_add_person)
+
+
+@render('reg_selfserve_add_person.html')
+def selfserve_add_person(request):
+    if request.method == 'GET':
+        form = forms.SelfServeAddMemberForm(
+            initial={
+                'email': request.session['selfserve_email'],
+            }
+        )
+        return { 'form': form }
+    else:
+        form = forms.SelfServeAddMemberForm(request.POST)
+        if not form.is_valid():
+            return { 'form': form }
+        else:
+            email = form.cleaned_data['email']
+            if Person.objects.filter(email=email).count():
+                messages.error(request, 'That email is already registered. You may not edit it.')
+                return { 'form': form }
+            else:
+                person = form.save()
+                request.session['selfserve_person'] = person.pk
+                return redirect(selfserve_add_membership)
+
+
+@render('reg_selfserve_add_membership.html')
+def selfserve_add_membership(request):
+    person = Person.objects.get(pk=request.session['selfserve_person'])
+
+    if request.method == 'GET':
+        form = forms.SelfServeAddMembershipForm(initial={'person':person.pk})
+    else:
+        form = forms.SelfServeAddMembershipForm(request.POST)
+
+    if request.method == 'GET' or not form.is_valid():
+        return {
+            'person': person,
+            'form': form,
+        }
+    else:
+        type = MembershipType.objects.get(pk=form.cleaned_data['type'])
+        quantity = form.cleaned_data['quantity']
+
+        # Validation
+        fail = False
+        if not type.in_quantity:
+            if MembershipSold.objects.filter(person=person, type=type).count():
+                messages.error(request, 'That person already has that membership')
+                fail = True
+            if quantity > 1:
+                messages.error(request, 'Sorry, but you can only buy one of that type per person. If you want to buy multiple memebrships, add them one per email address so we know who everyone is.')
+                form.quantity = 1
+                fail = True
+
+        if fail:
+            return {
+                'person': person,
+                'form': form,
+            }
+        else:
+            _cart(request, person, type, quantity)
+            messages.success(request,'Membership added to cart.')
+            return redirect(selfserve_index)
+
+
+def selfserve_remove(request,email,type_id):
+    person = Person.objects.get(email=email)
+    type = MembershipType.objects.get(pk=type_id)
+
+    _cart(request, person, type, 0)
+    return redirect(selfserve_index)
+
 
 
 @permission_required('reg.print_badges')

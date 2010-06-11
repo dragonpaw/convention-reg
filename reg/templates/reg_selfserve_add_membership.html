@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Pick Membership{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url reg.views.selfserve_add_membership %}">
+    {% csrf_token %}
+    <table>
+        <caption>What membership would you like?</caption>
+        <tbody>
+            <tr><th scope="col">Email:</th><td>{{person.email}}</td></tr>
+            {{ form.as_table()|safe }}
+        </tbody><tfoot>
+            <tr><td colspan="2"><input type="submit" value="Add to cart" /></td></tr>
+            <tr><td colspan="2"><a class="cancel" href="{% url reg.views.selfserve_index %}">
+                Nevermind. I don't like them that much.
+            </a></td></tr>
+        </tfoot>
+    </table>
+</form>
+{% endblock %}

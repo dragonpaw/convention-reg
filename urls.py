@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from coffin.conf.urls.defaults import *
 from convention import settings
 
 # Uncomment the next two lines to enable the admin:

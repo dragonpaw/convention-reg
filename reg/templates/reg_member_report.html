@@ -1,27 +1,32 @@
-# extends 'base.html'
+{% extends 'base.html' %}
+{% block title %}Member Report{% endblock %}
 
-# block content
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Address</th>
-        <th>City</th>
-        <th>State</th>
-        <th>Zip</th>
-        <th>Country</th>
-        <th>Email</th>
-    </tr>
-    # for o in objects
-    <tr>
-        <td>{{ o.name }}</td>
-        <td>{{ o.address }}</td>
-        <td>{{ o.city }}</td>
-        <td>{{ o.state }}</td>
-        <td>{{ o.zip }}</td>
-        <td>{{ o.country }}</td>
-        <td>{{ o.email }}</td>
-    </tr>
-    # endfor
+{% block content %}
+<table id="member-list">
+    <thead>
+        <tr>
+            <th style="width: 200px;">Legal Name</th>
+            <th style="width: 200px;">Con Name</th>
+            <th style="width: 400px;">City, State</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for o in people %}
+        <tr class={{ loop.cycle('odd', 'even') }}>
+            <td>
+                <a href="{% url reg.views.person_view id=o.pk %}">
+                    {{ o.name }}
+                </a>
+            </td>
+            <td>{{ o.con_name }}</td>
+            <td>{{ o.city }}, {{ o.state }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">Total: {{ people|length }}</td>
+        </tr>
+    </tfoot>
 </table>
-
-# endblock
+{% endblock %}

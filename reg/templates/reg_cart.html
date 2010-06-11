@@ -1,0 +1,54 @@
+{# This is used in the self-serve UI as well as the desk UI #}
+
+<table style="width: 100%;" id="cart">
+    <caption>Cart</caption>
+    <thead>
+        <tr>
+            <th class="subhead">Person</th>
+            <th class="subhead">Type</th>
+            <th class="subhead">Price</th>
+            <th class="subhead">Del</th>
+        </tr>
+    </thead><tbody>
+        {% set row_class = cycler('odd', 'even') %}
+
+
+        {% if session.cart_quantity == 0 %}
+        <tr><td colspan="4"><strong>Cart is empty. Buy something!</strong></td></tr>
+        {% endif %}
+        {% for p in cart %}
+            {% for t in cart[p] %}
+            {% set qty = cart[p][t] %}
+            {% if qty %}
+            <tr class={{ row_class.next() }}>
+                <td class="left">
+                    {%- if is_selfserve %} {{p.email}} {% else %} {{p.name}} {% endif -%}
+                </td>
+                <td class="center">{{t.event.name}}: {{t.name}}
+                    {% if qty > 1 %} x {{qty}}{% endif %}
+                </td>
+                <td class="right">${{t.price * qty}}</td>
+                <td>
+                    {% if is_selfserve %}
+                    <a href="{% url reg.views.selfserve_remove p.email,t.pk %}">
+                    {% else %}
+                    <a href="{% url reg.views.cart_remove p.pk,t.pk %}">
+                    {% endif %}
+                        <img src="{{MEDIA_URL}}/images/knobs/Cancel.png" alt="Delete">
+                    </a>
+
+                </td>
+
+            </tr>
+            {% endif %}
+            {% endfor %}
+        {% endfor %}
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <th>Total</th>
+            <td colspan="3" class="right">{{ session.cart_total|default('0.00', true) }}</td>
+        </tr>
+    </tfoot>
+</table>

@@ -1,28 +1,30 @@
-# extends 'base.html'
+{% extends 'base.html' %}
+{% block title %}{{ event.name }} approval report{% endblock %}
 
-# block content
-<h1>{{ title }} &mdash; Approvals List</h1>
-
+{% block content %}
 <table>
-    <tr>
-        <th>Name</th>
-        <th>City, State</th>
-        <th>Email</th>
-        <th>Membership Type</th>
-        <th>Approval State</th>
-    </tr>
-    # for o in objects
-    <tr class="{{ o.state }}-{{ loop.cycle ('odd', 'even') }}">
-        <td>{{ o.member.name }}</td>
-        <td>{{ o.member.city }}, {{ o.member.state }}</td>
-        <td>{{ o.member.email }}</td>
+    <caption>{{ event.name }} &mdash; Approvals List</caption>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>City, State</th>
+            <th>Email</th>
+            <th>Membership Type</th>
+            <th>Approval State</th>
+        </tr>
+    </thead><tbody>
+        {% for o in objects %}
+    <tr class="{{ o.state }} {{ o.state }}-{{ loop.cycle ('odd', 'even') }}">
+        <td>{{ o.person.name }}</td>
+        <td>{{ o.person.city }}, {{ o.person.state }}</td>
+        <td>{{ o.person.email }}</td>
         <td>
             {{ o.type.name }}
             {% if o.quantity %}<strong>x {{ o.quantity }}</strong>{% endif %}
         </td>
         <td>{{ o.state }}</td>
     </tr>
-    # endfor
+    {% endfor %}
+    </tbody>
 </table>
-
-# endblock
+{% endblock %}

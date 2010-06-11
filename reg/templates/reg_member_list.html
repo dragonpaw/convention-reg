@@ -1,27 +1,56 @@
-# extends 'base.html'
-# set title = "All Members"
+{% extends 'base.html' %}
+{% block title %}
+    Member List
+    {% if event %} &mdash {{ event }} {%endif%}
+{% endblock %}
 
-# block content
+{% block content %}
 <table id="member-list">
+    <caption>Member List</caption>
     <thead>
         <tr>
             <th style="width: 200px;">Legal Name</th>
             <th style="width: 200px;">Con Name</th>
-            <th style="width: 400px;">City, State</th>
+            <th style="width: 400px;">
+                {% if is_public %}
+                    Country
+                {% else %}
+                    City, State
+                {% endif %}
+            </th>
         </tr>
     </thead>
     <tbody>
-        # for o in members
+        {% for o in people %}
         <tr class={{ loop.cycle('odd', 'even') }}>
             <td>
-                <a href="{{ lib.url('convention.reg.views.person_view', id=o.pk) }}">
+                {% if is_public %}
                     {{ o.name }}
-                </a>
+                {% else %}
+                    <a href="{% url reg.views.person_view id=o.pk %}">
+                        {{ o.name }}
+                    </a>
+                {% endif %}
             </td>
             <td>{{ o.con_name }}</td>
-            <td>{{ o.city }}, {{ o.state }}</td>
+            {% if is_public %}
+                <td>{{ o.country }}</td>
+            {% else %}
+                <td>{{ o.city }}, {{ o.state }}</td>
+            {% endif %}
         </tr>
-        # endfor
+        {% endfor %}
     </tbody>
+    <tfoot>
+        <tr><td colspan="3">Total: {{people|length}}</td></tr>
+    </tfoot>
 </table>
-# endblock
+{% endblock %}
+
+{% block right %}
+{% if payment_form and not is_public %}
+    {% include 'reg_cart.html' with context %}
+    <br><br>
+    {% include 'reg_checkout_form.html' with context %}
+{% endif %}
+{% endblock %}

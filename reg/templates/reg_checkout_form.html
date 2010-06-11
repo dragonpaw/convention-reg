@@ -1,0 +1,14 @@
+<form action="{% url reg.views.checkout %}" method="post">
+{% csrf_token %}
+
+<table id="checkout">
+    <thead>
+        <tr><th colspan="2">Checkout</th></tr>
+    </thead><tbody>
+        {{ payment_form.as_table()|safe }}
+    </tbody>
+    <tfoot>
+        <tr><td colspan="4"><input type="submit" value="Checkout"></td></tr>
+    </tfoot>
+</table>
+</form>

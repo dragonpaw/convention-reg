@@ -1,21 +1,21 @@
-# extends 'base.html'
-# set title = "Badges Pending"
+{% extends 'base.html' %}
+{% block title %}Badges Pending{% endblock %}
 
-# block content
+{% block content %}
 <p>Badges pending: {{ objects.count() }}</p>
-# if objects.count()
+{% if objects.count() %}
 <p>
     <strong>Don't click on this if you're not the guy who is supposed to print badges.</strong>
     <ul>
-        <li><a href="{{ lib.url('convention.reg.views.print_pdf', 1)}}">PDF of <strong>1 page</strong> of pending badges.</a></li>
-        <li><a href="{{ lib.url('convention.reg.views.print_pdf')}}">PDF of <strong>ALL</strong> pending badges.</a></li>
+        <li><a href="{% url reg.views.print_pdf 1%}">PDF of <strong>1 page</strong> of pending badges.</a></li>
+        <li><a href="{% url reg.views.print_pdf %}">PDF of <strong>ALL</strong> pending badges.</a></li>
     </ul>
 </p>
 <hr>
-# endif
+{% endif %}
 <ol>
-    # for o in objects
+    {% for o in objects %}
     <li>{{ o.person }} {% if o.person.con_name %}&mdash; <strong>{{ o.person.con_name }}</strong>{% endif %} ({{o.type.name}})</li>
-    # endfor
+    {% endfor %}
 </ol>
-# endblock
+{% endblock %}

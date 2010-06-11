@@ -1,82 +1,78 @@
-<table class="member_form">
+<table id="member_form">
+    <caption>Add/Edit Member</caption>
+    <COL width="auto"><COL width="200px">
+    <COL width="auto"><COL width="200px">
+    <COL width="auto"><COL width="200px">
     <tbody>
         <tr>
-            <table class="member_form">
-            <tr>
-                <th>Name</th>
-                <td id="name">{{ form.name }}</td>
-                <td class="errors">{{ form.name.errors }}</td>
-            </tr>
-            </table>
+            <th>Name</th>
+            <td id="name" colspan="3">
+                {{ form.name|safe }}
+                <span class="errors">{{ form.name.errors|safe }}</span>
+            </td>
+            <th>Badge Name</th>
+            <td>
+                {{ form.con_name|safe }}
+                <span class="errors">{{ form.con_name.errors|safe }}</span>
+            </td>
+        </tr><tr>
+            <th>Email Address</th>
+            <td>
+                {{ form.email|safe }}
+                <span class="errors">{{ form.email.errors|safe }}</span>
+            </td>
+            <th>Affiliation</th>
+            <td>
+                {{ form.affiliation|safe }}
+                <span class="errors">{{ form.affiliation.errors|safe }}</span>
+            </td>
+            <th>Publish?</th>
+            <td>
+                {{ form.public|safe }} {{ form.public.help_text }}
+                <span class="errors">{{ form.public.errors|safe }}</span>
+            </td>
+        </tr><tr>
+            <th>Address</th>
+            <td colspan="5">
+                {{ form.address|safe }}
+                <span class="errors">{{ form.address.errors|safe }}</span>
+            </td>
+        </tr><tr>
+            <th>City</th>
+            <td>
+                {{ form.city|safe }}
+                <span class="errors">{{ form.city.errors|safe }}</span>
+            </td>
+            <th>State</th>
+            <td>
+                {{ form.state|safe }}
+                <span class="errors">{{ form.state.errors|safe }}</span>
+            </td>
+            <th>Country</th>
+            <td>
+                {{ form.country|safe }}
+                <span class="errors">{{ form.country.errors|safe }}</span>
+            </td>
+        </tr><tr>
+            <th>Zip</th>
+            <td>
+                {{ form.zip|safe }}
+                <span class="errors">{{ form.zip.errors|safe }}</span>
+            </td>
+            <th>Phone</th>
+            <td>
+                {{ form.phone|safe }}
+                <span class="errors">{{ form.phone.errors|safe }}</span>
+            </td>
+            <th>Birth Date</th>
+            <td>
+                {{ form.birth_date|safe }} {{ form.birth_date.help_text }}
+                <span class="errors">{{ form.birth_date.errors|safe }}</span>
+            </td>
         </tr>
+    </tbody><tfoot>
         <tr>
-            <table class="member_form">
-            <tr>
-                <th>Badge Name</th>
-                <td>{{ form.con_name }}</td>
-                <td class="errors">{{ form.con_name.errors }}</td>
-                <th>Affiliation</th>
-                <td>{{ form.affiliation }}</td>
-                <td class="errors">{{ form.affiliation.errors }}</td>
-                <th>Publish?</th>
-                <td>{{ form.public }}</td>
-                <td class="errors">{{ form.public.errors }}</td>
-            </tr>
-            </table>
+            <td colspan="6"><input type="submit" value="Update Info"></td>
         </tr>
-
-        <tr>
-            <table class="member_form">
-            <tr>
-                <th>Email Address</th>
-                <td>{{ form.email}}</td>
-                <td class="errors">{{ form.email.errors }}</td>
-            </tr>
-            </table>
-        </tr>
-
-        <tr>
-            <table class="member_form">
-            <tr>
-                <th>Address</th>
-                <td>{{ form.address }}</td>
-                <td class="errors">{{ form.address.errors }}</td>
-            </tr>
-            </table>
-        </tr>
-
-        <tr>
-            <table class="member_form">
-            <tr>
-                <th>City</th>
-                <td>{{ form.city }}</td>
-                <td class="errors">{{ form.city.errors }}</td>
-                <th>State</th>
-                <td>{{ form.state }}</td>
-                <td class="errors">{{ form.state.errors }}</td>
-                <th>Country</th>
-                <td>{{ form.country }}</td>
-                <td class="errors">{{ form.country.errors }}</td>
-            </tr>
-            </table>
-        </tr>
-        <tr>
-            <table class="member_form">
-            <tr>
-                <th>Zip</th>
-                <td>{{ form.zip }}</td>
-                <td class="errors">{{ form.zip.errors }}</td>
-                <th>Phone</th>
-                <td>{{ form.phone }}</td>
-                <td class="errors">{{ form.phone.errors }}</td>
-                <th>Birth Date</th>
-                <td>{{ form.birth_date }} (dd/mm/yy)</td>
-                <td class="errors">{{ form.birth_date.errors }}</td>
-            <tr>
-            </table>
-        </tr>
-        <tr>
-            <td><input type="submit" value="Update Info"></td>
-        </tr>
-    </tbody>
+    </tfoot>
 </table>

@@ -1,18 +1,35 @@
 from django import forms
 from convention.reg.models import Person, MembershipSold, MembershipType, PaymentMethod
 from datetime import date
+
+import fields
+
 CURRENT_YEAR = date.today().year
 MAX_YEARS = 12
 
 class MemberForm(forms.ModelForm):
 
-    birth_date = forms.DateField(('%m/%d/%y',), label = "Birth Date", required=False,
-        widget=forms.DateInput(format='%m/%d/%y', attrs={'class':'input'}),
+    birth_date = forms.DateField(
+        label = "Birth Date",
+        required=False,
+        help_text='mm/dd/yyyy',
+        widget=forms.DateInput(format='%m/%d/%Y', attrs={'class':'input'}),
     )
 
     class Meta:
         model = Person
 
+
+class SelfServeAddMemberForm(forms.ModelForm):
+    birth_date = forms.DateField(
+        label = "Birth Date",
+        required=False,
+        help_text='mm/dd/yyyy',
+        widget=forms.DateInput(format='%m/%d/%Y', attrs={'class':'input'}),
+    )
+
+    class Meta:
+        model = Person
 
 class MembershipForm(forms.ModelForm):
     member = forms.ModelChoiceField(
@@ -20,6 +37,7 @@ class MembershipForm(forms.ModelForm):
         queryset=Person.objects.all(),
         widget=forms.HiddenInput(),
     )
+
 
     type = forms.ModelChoiceField(
         label = "Type",
@@ -31,10 +49,51 @@ class MembershipForm(forms.ModelForm):
         queryset=PaymentMethod.objects.all(),
     )
 
-
     class Meta:
         model = MembershipSold
-        fields = ( 'type', 'payment_method')
+        fields = ('type', 'quantity')
+
+
+class SelfServeAddMembershipForm(forms.Form):
+    type_choices = [
+        (x.pk, '{0}: ${1}'.format(x,x.price)) for x in MembershipType.objects.available()
+    ]
+
+    type = forms.ChoiceField(
+        label = "Type",
+        choices = type_choices,
+    )
+
+    quantity = forms.IntegerField(
+        min_value = 1, max_value = 999,
+        initial = 1
+    )
+
+    def clean(self):
+        cleaned = self.cleaned_data
+        type = MembershipType.objects.get(pk=cleaned.get('type'))
+        quantity = cleaned.get('quantity')
+        if quantity > 1 and not type.in_quantity:
+            self.data = self.data.copy()
+            self.data['quantity'] = 1
+            self._errors["quantity"] = self.error_class(['You cannot buy multiple of that type.'])
+            del cleaned['quantity']
+        return cleaned
+
+
+class SelfServePaymentForm(forms.Form):
+    number = fields.CreditCardNumberField(label='Credit Card #')
+    expires = fields.MonthYearField()
+
+    cvv = forms.IntegerField(
+        label = 'CVV (On the back)',
+        min_value=0000, max_value=9999,
+        required = False,
+    )
+    zip = forms.IntegerField(
+        min_value=00000, max_value=99999,
+        required = False,
+    )
 
 
 class PaymentForm(forms.Form):
@@ -42,11 +101,14 @@ class PaymentForm(forms.Form):
     method = forms.ModelChoiceField(
         queryset=PaymentMethod.objects.all(),
     )
-    number = forms.CharField(
-        label="Credit Card #",
-        max_length = 20,
-        required = False,
-    )
+
+    number = fields.CreditCardNumberField(label='Credit Card #', required=False)
+
+    #number = forms.CharField(
+    #    label="Credit Card #",
+    #    max_length = 20,
+    #    required = False,
+    #)
     month = forms.TypedChoiceField(
         coerce=int,
         choices=(

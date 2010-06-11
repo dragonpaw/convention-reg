@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{# Currently, this is not actually in use. #}
+
+{% block content %}
+<form method="post" action="#">
+    {% csrf_token %}
+    <table id="selfserve_add_email">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <td><input type="text" name="email" id="id_email"/></td>
+            </tr>
+        </thead><tbody>
+            <tr>
+                <td colspan="2"><input type="submit" /></td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+{% endblock %}

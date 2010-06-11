@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-from jinja2.filters import contextfilter
+from coffin import template
+from jinja2 import contextfilter
+register = template.Library()
 
 @contextfilter
-def filter_not_in_cart(context, types):
+def not_in_cart(context, types):
     """Filter a list of types to only those that should be able to be added
     for the current member. This includes checking dependencies, as well as seeing
     if it's already in the cart and not a type that accepts multiples.
@@ -36,3 +38,5 @@ def filter_not_in_cart(context, types):
                         break
 
     return new
+
+register.filter('not_in_cart', not_in_cart)

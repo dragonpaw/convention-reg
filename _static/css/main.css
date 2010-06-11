@@ -1,12 +1,37 @@
-input, select, table { width: 100%; padding: 2px 10px 2px 10px }
+/* Generics ----------------------------------------------------------------- */
+input, select, table { padding: 2px 10px 2px 10px }
 
 table#member th { align: right; text-align: right; }
-td, th { padding: 2px 10px 2px 10px; }
 
-/*
+.container { padding:5px; margin:2px; }
+
+.left { text-align: left; }
+.right { text-align: right; }
+.center { text-align: center; }
+
+/* View Specific: Approval Report ------------------------------------------- */
+.denied-even {
+    background-color: rgb(225, 168, 220);
+}
+.denied td {
+    text-decoration: line-through;
+}
+.denied-odd {
+    background-color: rgb(240, 47, 163);
+}
+/*.approved-even { background-color: rgb(168, 255, 168); }*/
+/*.approved-odd { background-color: rgb(138, 240, 138); }*/
+.pending-even { background-color: rgb(255, 223, 168); }
+.pending-odd { background-color: rgb(255, 230, 180); }
+.pending td {
+    font-weight: bold;
+}
+
+/* View Specific: Person Editing -------------------------------------------- */
+
+/* Used to have all kinds of silly colors here. Then changed to a common table theme. --Ash
 table#member-list td { padding: 2px; border-left: 1px black solid; border-right: 1px black solid;}
 table#member-list tbody { border: 2px solid blue; }
-*/
 
 table#current_memberships { background-color: rgb(152, 251, 152); }
 table#current_memberships thead { background-color: black; color: white; font-size: larger; }
@@ -15,35 +40,21 @@ table#current_memberships tr.odd { background-color: rgb(124, 252, 0) }
 table#available_memberships { background-color: rgb(173, 216, 230); }
 table#available_memberships thead { background-color: black; color: white; font-size: larger; }
 table#available_memberships tr.odd { background-color: rgb(0, 191, 255) }
-
 table#cart { background-color: rgb(221, 160, 221); }
 table#cart thead { background-color: black; color: white; font-size: larger; }
 table#cart tr.odd { background-color: rgb(186, 85, 211) }
-
-tr.odd { background-color: rgb(230, 230, 250); }
-
-.left { text-align: left; }
-.right { text-align: right; }
-.center { text-align: center; }
-
-.denied-even { background-color: rgb(225, 0, 166); text-decoration: line-through !important; }
-.denied-odd { background-color: rgb(240, 47, 163); text-decoration: line-through !important; }
-.approved-even { background-color: rgb(168, 255, 168); }
-.approved-odd { background-color: rgb(138, 240, 138); }
-.pending-even { background-color: rgb(240, 226, 47); }
-.pending-odd { background-color: rgb(255, 239, 0); }
-
-th.subhead { font-size: 0.8em; background-color: rgb(30,30,30);}
-
-tfoot { border-top: double black; }
-
-#id_name, #id_con_name, #id_address, #id_phone, #id_city { width: 100%; }
-#id_birth_date { width: 120px; }
-#id_state, #id_zip, #id_country { width: 70px; }
-table.member_form th { text-align: left; width: 80px; }
+*/
 
 
-/* */
+#member_form select,
+#member_form input { width: 90%; }
+
+#member_form #id_birth_date { width: auto; }
+
+
+#member_form th { text-align: left; width: 80px !important; }
+
+/* Django Messages ---------------------------------------------------------- */
 .info, .success, .warning, .error, .validation {
     border: 1px solid;
     margin: 10px 10px;
@@ -75,4 +86,209 @@ table.member_form th { text-align: left; width: 80px; }
     color: #D63301;
     background-color: #FFCCBA;
     background-image: url('../images/knobs/Snapback.png');
+}
+
+/* JQuery: Modal Plugin ----------------------------------------------------- */
+#basic-modal-content {display:none;}
+#simplemodal-overlay {background-color:#000; cursor:wait;}
+#simplemodal-container {height:320px; width:600px; color:#bbb; background-color:#333; border:4px solid #444; padding:12px;}
+#simplemodal-container code {background:#141414; border-left:3px solid #65B43D; color:#bbb; display:block; margin-bottom:12px; padding:4px 6px 6px;}
+#simplemodal-container a {color:#ddd;}
+#simplemodal-container a.modalCloseImg {background:url(/static/images/x.png) no-repeat; width:25px; height:29px; display:inline; z-index:3200; position:absolute; top:-15px; right:-16px; cursor:pointer;}
+#simplemodal-container #basic-modal-content {padding:8px;}
+
+/* Navigation Bar ----------------------------------------------------------- */
+#navbar > li {
+    font-weight: bold;
+    border-bottom: 2em solid white;
+    list-style: none;
+    background-color: black;
+    text-align: center;
+    text-transform: capitalize;
+    color: white;
+    padding: 3px;
+}
+
+#navbar li li {
+    font-weight: normal;
+    background-color: rgb(240,240,240);
+    text-align: left;
+    padding: 2px 8px;
+    list-style: none;
+}
+#navbar li li a {
+    color: black;
+    text-decoration: none;
+}
+
+input[type='submit'] {
+    font-weight: bold;
+    width: 100%;
+}
+
+input[type='text'], select {
+    width: 50em;
+}
+
+/* Cart Customization ------------------------------------------------------- */
+/* This makes the credit card dropdowns sit side by side. */
+#id_expires_0 {
+    width: 60% !important;
+}
+#id_expires_1 {
+    width: 40% !important;
+}
+
+#cart a  {
+    border-bottom: none;
+    text-align: center;
+}
+
+#cart input,
+#checkout select,
+#checkout input {
+    width: auto;
+}
+
+/* Buttons and Fake Buttons ------------------------------------------------- */
+
+td:hover a.cancel {
+    background-color: rgb(255,77,77);
+    color: black;
+}
+
+a.submit, input[type='submit'] {
+    background-color: rgb(116,240,47);
+    border: 3px solid rgb(79,164,0);
+    width: 90% !important;
+    display: block;
+    margin: 2px auto;
+    text-align: center;
+    font-weight: bold;
+    padding: 2px;
+    cursor: pointer;
+    color: black;
+}
+a.submit:hover, input[type='submit']:hover {
+    background-color: rgb(140, 255, 60) !important;
+}
+
+a.cancel, input[type='submit'].cancel {
+    background-color: rgb(255,77,77);
+    border: 3px solid rgb(164,0,0);
+    width: 90% !important;
+    display: block;
+    margin: 2px auto;
+    text-align: center;
+    font-weight: bold;
+    padding: 2px;
+    cursor: pointer;
+    color: black;
+    text-transform: none;
+}
+a.cancel:hover {
+    background-color: rgb(255, 0, 155) !important;
+}
+
+
+/* Form Errors -------------------------------------------------------------- */
+ul.errorlist {
+    background-color: rgb(240,213,244);
+    border: 3px solid rgb(255,0,166);
+    color: rgb(255,0,166);
+    text-decoration: none;
+    padding: 5px;
+}
+
+ul.errorlist li {
+    list-style: none;
+}
+
+ul {
+    padding: 0;
+    margin: 0;
+}
+
+
+/* Tables ---------------------------------------------------------------------
+ http://icant.co.uk/csstablegallery/index.php?css=71
+
+Data Tables and Cascading Style Sheets Gallery
+Title: Casablanca
+Author: RODrigo CASTilho Galvão Ferreira - RODCAST
+URL: http://www.rodcast.com.br
+Update: 04/04/2008 10:51 AM
+
+*/
+
+table {
+    color: #7F7F7F;
+    font: 0.8em/1.6em "Trebuchet MS",Verdana,sans-serif;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+table,caption {
+    margin: 0 auto;
+    border-right: 1px solid #CCC;
+    border-left: 1px solid #CCC
+}
+
+caption,th,td {
+    border-left: 0;
+    padding: 5px 10px
+}
+
+caption,tfoot th,tfoot td {
+    /*background-color: #E63C1E;*/
+    background-color: rgb(79,164,0);
+    color: #FFF;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+tfoot th, tfoot td {
+    background-color: rgb(0,0,0);
+}
+
+th {
+    font-weight: bold;
+    text-transform: uppercase;
+    /* background-color: #C30; */
+    background-color: rgb(83,149,47);
+    /* color: #FFB3A6; */
+    color: rgb(228,255,213);
+    text-align: center;
+}
+
+tbody th {
+    /*padding: 20px 10px;*/
+    font-size: 0.8em; background-color: rgb(47,74,30);
+}
+
+tbody tr.odd {
+    background-color: #F7F7F7;
+    color: #666;
+}
+
+tbody a {
+    padding: 1px 2px;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 2px dotted rgb(83,149,47);
+}
+
+tbody a:active,tbody a:hover,tbody a:focus {
+    color: #666
+}
+
+tbody td:hover {
+    background-color: #EEE;
+    /*border: 1px groove black;*/
+    color: #333
+}
+
+tbody tr:hover a {
+    background-color: #FFF
 }

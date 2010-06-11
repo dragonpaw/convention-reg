@@ -50,7 +50,7 @@ class Person(models.Model):
     birth_date = models.DateField(blank=True, null=True)
     affiliation = models.ForeignKey('Affiliation', blank=True, null=True)
     email = models.EmailField('Email Address', blank=True, default='')
-    public = models.BooleanField('Publish?', default=True)
+    public = models.BooleanField('Publish online?', default=True, help_text="Would you like your name listed in the public directory?")
 
     class Meta:
         verbose_name_plural = "People"

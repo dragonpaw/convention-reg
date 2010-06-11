@@ -11,7 +11,7 @@ def quantum_gateway(login, key, amount, zip=None, name=None, address=None, email
     values = [
         ('gwlogin', login),
         ('RestrictKey', key),
-        ('trans_method', 'cc'),
+        ('trans_method', 'CC'),
         ('amount', str(amount)),
         ('Dsep', 'Pipe'),
     ]

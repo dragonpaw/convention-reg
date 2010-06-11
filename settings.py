@@ -98,6 +98,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.csrf',
     'django.contrib.messages.context_processors.messages',
     "convention.reg.context_processors.open_events",
+    'context_processors.add_session',
 )
 
 
@@ -111,3 +112,13 @@ INSTALLED_APPS = (
     'convention.lib',
     'south',
 )
+
+#JINJA2_FILTERS = (
+#    'path.to.myfilter',
+#)
+#JINJA2_TESTS = {
+#    'test_name': 'path.to.mytest',
+#}
+#JINJA2_EXTENSIONS = (
+#    'jinja2.ext.do',
+#)
