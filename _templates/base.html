@@ -9,6 +9,14 @@
         <link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/sprite.css" />
         <script src="{{MEDIA_URL}}/js/jquery.js" type="text/javascript" language="javascript" charset="utf-8"></script>
         <script src="{{MEDIA_URL}}/js/elastic.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+        <script type="application/x-javascript">
+            $(document).ready(function(){
+                $(".submitlink").bind('click', function() {
+                    $(this).closest("form").trigger("submit");
+                });
+            });
+        </script>
+
         {% block head %}{% endblock %}
     </head>
     <body>

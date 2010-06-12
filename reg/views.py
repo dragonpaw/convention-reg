@@ -111,6 +111,10 @@ def _cart_struct():
 def _get_cart(request):
     if 'cart' not in request.session:
         request.session['cart'] = defaultdict(_cart_struct)
+    if 'cart_quantity' not in request.session:
+        request.session['cart_quantity'] = 0
+    if 'cart_total' not in request.session:
+        request.session['cart_total'] = 0
     return request.session['cart']
 
 
@@ -146,9 +150,11 @@ def _cart(request, person, type, qty=1):
 
 
 def _cart_empty(request):
-    for key in ('cart', 'cart_total', 'cart_quantity', 'payment_form'):
+    for key in ('cart', 'payment_form'):
         if key in request.session:
             del request.session[key]
+    request.session['cart_total'] = 0
+    request.session['cart_quantity'] = 0
 
 
 @permission_required('reg.add_membership')
@@ -331,6 +337,9 @@ def selfserve_add_email(request):
         return {}
     else:
         email = request.POST['email']
+        if not email or '@' not in email:
+            messages.error(request, "Please type in an email address.")
+            return redirect(selfserve_index)
         try:
             person = Person.objects.get(email=email)
             request.session['selfserve_person'] = person.pk
@@ -338,6 +347,9 @@ def selfserve_add_email(request):
         except Person.DoesNotExist:
             request.session['selfserve_email'] = email
             return redirect(selfserve_add_person)
+        except Person.MultipleObjectsReturned:
+            messages.error(request, "Unfortunately, multiple accounts have that address, unable to add to cart.")
+            return redirect(selfserve_index)
 
 
 @render('reg_selfserve_add_person.html')

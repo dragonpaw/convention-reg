@@ -10,9 +10,13 @@
         <tr><th colspan="2">Checkout</th></tr>
     </thead><tbody>
         {{ payment_form.as_table()|safe }}
-    </tbody>
+        <tr>
+            <td></td>
+        <td colspan="1"><a href="#" class="button submitlink"><span class="checkout">Checkout</span></a></td>
+        </tr>
+    </tbody> <!--
     <tfoot>
         <tr><td colspan="4"><input type="submit" value="Checkout"></td></tr>
-    </tfoot>
+    </tfoot> -->
 </table>
 </form>

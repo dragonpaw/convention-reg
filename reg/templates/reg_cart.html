@@ -1,5 +1,8 @@
 {# This is used in the self-serve UI as well as the desk UI #}
 
+{% if is_selfserve %}
+<form method="post" action="{% url reg.views.selfserve_add_email %}">
+{% endif %}
 <table style="width: 100%;" id="cart">
     <caption>Cart</caption>
     <thead>
@@ -7,13 +10,13 @@
             <th class="subhead">Person</th>
             <th class="subhead">Type</th>
             <th class="subhead">Price</th>
-            <th class="subhead">Del</th>
+            <th class="subhead">Action</th>
         </tr>
     </thead><tbody>
         {% set row_class = cycler('odd', 'even') %}
 
 
-        {% if session.cart_quantity == 0 %}
+        {% if request.session.cart_quantity == 0 %}
         <tr><td colspan="4"><strong>Cart is empty. Buy something!</strong></td></tr>
         {% endif %}
         {% for p in cart %}
@@ -29,20 +32,27 @@
                 </td>
                 <td class="right">${{t.price * qty}}</td>
                 <td>
-                    {% if is_selfserve %}
-                    <a href="{% url reg.views.selfserve_remove p.email,t.pk %}">
+                    <a class="button"
+                    {%- if is_selfserve -%}
+                       href="{% url reg.views.selfserve_remove p.email,t.pk %}"
                     {% else %}
-                    <a href="{% url reg.views.cart_remove p.pk,t.pk %}">
+                        href="{% url reg.views.cart_remove p.pk,t.pk %}"
                     {% endif %}
-                        <img src="{{MEDIA_URL}}/images/knobs/Cancel.png" alt="Delete">
-                    </a>
-
+                    >
+                        <span class="delete">Remove</span></a>
                 </td>
-
             </tr>
             {% endif %}
             {% endfor %}
         {% endfor %}
+        {% if is_selfserve %}
+            <tr>
+                {% csrf_token %}
+                <td colspan="3"><input type="text" name="email" id="id_email"/></td>
+                <td><a class="button submitlink" href="#"><span class="add">Add</span></a></td>
+            </tr>
+        {% endif %}
+
     </tbody>
 
     <tfoot>
@@ -52,3 +62,6 @@
         </tr>
     </tfoot>
 </table>
+{% if is_selfserve %}
+</form>
+{% endif %}

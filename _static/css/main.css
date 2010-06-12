@@ -144,13 +144,85 @@ input[type='text'], select {
     text-align: center;
 }
 
-#cart input,
 #checkout select,
 #checkout input {
     width: auto;
 }
 
 /* Buttons and Fake Buttons ------------------------------------------------- */
+
+a.button{
+    background:url(../images/nicebutton/button.gif);
+    display:block;
+    color:#555555;
+    font-weight:bold;
+    height:30px;
+    line-height:29px;
+    margin-bottom:10px;
+    margin-top:10px;
+    text-decoration:none;
+    width:191px;
+    padding: 0;
+    border: 0;
+}
+a:hover.button{
+    color:#0066CC;
+}
+
+a.button span {
+    background-repeat: no-repeat;
+    background-position: 10px 8px;
+    text-indent:30px;
+    display:block;
+    text-align: center;
+}
+
+a.button .add{
+    background-image: url(../images/silk/add.png);
+}
+
+a.button .delete{
+    background-image: url(../images/silk/cross.png);
+}
+
+a.button .checkout{
+    background-image: url(../images/silk/coins.png);
+}
+/*
+.button {
+    float: left;
+    clear: both;
+    background: url(../images/liquidbutton/btn_left.png) no-repeat;
+    padding: 0 0 0 10px;
+    margin: 5px;
+    width: 400px;
+}
+.button a {
+    float: left;
+    height: 40px;
+    background: url(../images/liquidbutton/btn_stretch.png) repeat-x left top;
+    line-height: 40px;
+    padding: 0 10px;
+    color: #fff;
+    font-size: 1em;
+    text-decoration: none;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    width: 370px;
+}
+.button span {
+    background: url(../images/liquidbutton/btn_right.png) no-repeat;
+    float: left;
+    width: 10px;
+    height: 40px;
+}
+
+.button_add {
+    background-color: green;
+}
+
+*/
 
 td:hover a.cancel {
     background-color: rgb(255,77,77);
@@ -189,7 +261,6 @@ a.cancel, input[type='submit'].cancel {
 a.cancel:hover {
     background-color: rgb(255, 0, 155) !important;
 }
-
 
 /* Form Errors -------------------------------------------------------------- */
 ul.errorlist {
