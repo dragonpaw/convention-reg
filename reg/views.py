@@ -6,6 +6,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.http import HttpResponse, Http404
@@ -16,6 +17,14 @@ from convention.lib.jinja import render, render_to_response
 from convention.reg import forms
 from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
 from convention.reg.pdf import pos, start
+
+try:
+    selfserve_gateway = settings.LOCAL_SETTINGS.get('selfserve','payment_method')
+    SELFSERVE_PAYMENT = PaymentMethod.objects.get(name=selfserve_gateway)
+except:
+    raise RuntimeError('Self Service payment type in config points to non-existant method: {0}'.format(
+        selfserve_gateway
+    ))
 
 def _process_member_form(request, person=None):
     if request.method == 'POST':
@@ -100,9 +109,9 @@ def _cart_struct():
 
 
 def _get_cart(request):
-    if 'memberships' not in request.session:
-        request.session['memberships'] = defaultdict(_cart_struct)
-    return request.session['memberships']
+    if 'cart' not in request.session:
+        request.session['cart'] = defaultdict(_cart_struct)
+    return request.session['cart']
 
 
 def _cart(request, person, type, qty=1):
@@ -137,8 +146,9 @@ def _cart(request, person, type, qty=1):
 
 
 def _cart_empty(request):
-    del request.session['cart_total']
-    del request.session['cart_total']
+    for key in ('cart', 'cart_total', 'cart_quantity', 'payment_form'):
+        if key in request.session:
+            del request.session[key]
 
 
 @permission_required('reg.add_membership')
@@ -163,16 +173,19 @@ def cart_add(request, person_id=None, type_id=None, qty=1):
         return redirect(request.META['HTTP_REFERER'])
 
 
-@permission_required('reg.add_membership')
+#@permission_required('reg.add_membership')
 @transaction.commit_on_success
-def checkout(request):
+def checkout(request,is_selfserve=False):
     """Perform a checkout opertion.
 
     For types that can be in-quantity, if there's already some sold, a new sale
     record will be created, showing the additional quantity. (This is
     intentional so that there will be proper logging.) """
 
-    form = forms.PaymentForm(request.POST)
+    if is_selfserve:
+        form = forms.SelfServePaymentForm(request.POST)
+    else:
+        form = forms.PaymentForm(request.POST)
 
     if not form.is_valid():
         transaction.rollback()
@@ -183,26 +196,48 @@ def checkout(request):
     cart = _get_cart(request)
 
     # First, some sanity checks.
+    total = Decimal(0)
     error = False
     for person in cart:
         for type in cart[person]:
-            if cart[person][type] and person.memberships.filter(type=type).count() and not type.in_quantity:
+            # Comes from the use of defaultdicts.
+            if cart[person][type] == 0:
+                continue
+            if person.memberships.filter(type=type).count() and not type.in_quantity:
                 messages.error(request, 'That membership has already been sold.')
                 error = True
+            total += type.price
     if error:
         transaction.rollback()
         request.session['payment_form'] = form
         return redirect(request.META['HTTP_REFERER'])
 
-    # OK, now safe to commit.
-    total = Decimal(0)
     payment = Payment()
-    payment.user = request.user
-    payment.method = form.cleaned_data['method']
-    payment.comment = form.cleaned_data['comment']
-    payment.ui_used = 'event'
-    payment.amount = 0 # Will be changed below, but we need to save to link to the memberships.
+    if not request.user.is_anonymous():
+        payment.user = request.user
+    if is_selfserve:
+        payment.method = SELFSERVE_PAYMENT
+        payment.ui_used = 'self'
+    else:
+        payment.method = form.cleaned_data['method']
+        payment.comment = form.cleaned_data['comment']
+        payment.ui_used = 'event'
+    payment.amount = total
     payment.save()
+
+    if not payment.process(form=form, request=request):
+        if payment.error_message:
+            messages.error(request, "Payment failed: %s" % payment.error_message)
+        else:
+            messages.error(request, "Payment failed. (Unknown reason.)")
+        payment.delete() # Not all backends can rollback. So delete it too.
+        transaction.rollback()
+        request.session['payment_form'] = form
+        if is_selfserve:
+            return redirect(selfserve_index)
+        else:
+            return redirect(person_view, person.pk)
+
 
     for person in cart:
         for type in cart[person]:
@@ -218,27 +253,13 @@ def checkout(request):
             membership.payment = payment
             membership.save()
 
-            total += membership.price
-
-    # Update the total.
-    payment.amount = total
-    payment.save()
-
-    if payment.process(form=form, request=request):
-        _cart_empty(request)
-        messages.success(request, "Payment accepted")
-        transaction.commit()
-        del request.session['payment_form']
-        return redirect(print_pending)
+    _cart_empty(request)
+    messages.success(request, "Payment accepted")
+    transaction.commit()
+    if is_selfserve:
+        return redirect(selfserve_index)
     else:
-        if payment.error_message:
-            messages.error(request, "Payment failed: %s" % payment.error_message)
-        else:
-            messages.error(request, "Payment failed. (Unknown reason.)")
-        transaction.rollback()
-        request.session['payment_form'] = form
-        return redirect(person_view, person.pk)
-
+        return redirect(print_pending)
 
 
 @permission_required('reg.print_badges')

@@ -18,6 +18,7 @@ urlpatterns = patterns('convention.reg.views',
     (r'^selfserve/add/person/$', 'selfserve_add_person'),
     (r'^selfserve/add/membership/$', 'selfserve_add_membership'),
     (r'^selfserve/remove/(?P<email>.*?)/(?P<type_id>\d+)/$', 'selfserve_remove'),
+    url(r'^selfserve/checkout/$', 'checkout', {'is_selfserve': True}, name='selfserve-checkout' ),
 
     (r'^pending/$', 'print_pending'),
     (r'^pdf/$', 'print_pdf'),

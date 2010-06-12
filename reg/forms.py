@@ -82,16 +82,20 @@ class SelfServeAddMembershipForm(forms.Form):
 
 
 class SelfServePaymentForm(forms.Form):
-    number = fields.CreditCardNumberField(label='Credit Card #')
-    expires = fields.MonthYearField()
+    name = forms.CharField(label="Name on Card", max_length=60)
+    address = forms.CharField(label="Billing Address", max_length=60)
+    zip = forms.IntegerField(
+        label='Billing Zip',
+        min_value=00000, max_value=99999,
+        required = False,
+    )
+    email = forms.EmailField(help_text='Receipt will be emailed.')
 
+    number = fields.CreditCardNumberField(label='Card #')
+    expires = fields.MonthYearField()
     cvv = forms.IntegerField(
         label = 'CVV (On the back)',
         min_value=0000, max_value=9999,
-        required = False,
-    )
-    zip = forms.IntegerField(
-        min_value=00000, max_value=99999,
         required = False,
     )
 
@@ -109,27 +113,9 @@ class PaymentForm(forms.Form):
     #    max_length = 20,
     #    required = False,
     #)
-    month = forms.TypedChoiceField(
-        coerce=int,
-        choices=(
-            ('1', '01: January'),
-            ('2', '02: February'),
-            ('3', '03: March'),
-            ('4', '04: April'),
-            ('5', '05: May'),
-            ('6', '06: June'),
-            ('7', '07: July'),
-            ('8', '08: August'),
-            ('8', '09: September'),
-            ('10', '10: October'),
-            ('11', '11: November'),
-            ('12', '12: December'),
-        )
-    )
-    year = forms.TypedChoiceField(
-        coerce=int,
-        choices = [(x,x) for x in range(CURRENT_YEAR,CURRENT_YEAR+MAX_YEARS)]
-    )
+
+    expires = fields.MonthYearField()
+
     cvv = forms.IntegerField(
         label = 'CVV (On the back)',
         min_value=0000, max_value=9999,

@@ -9,22 +9,22 @@ class AffiliationOptions(admin.ModelAdmin):
 
 class MembershipInline(admin.TabularInline):
     model = MembershipSold
-    readonly_fields = ('person','payment','price')
+    readonly_fields = ('payment','price')
     fields = ('person','type','badge_number','price','state','quantity','payment')
 
 class PaymentOptions(admin.ModelAdmin):
-    list_display = ('id', 'timestamp', 'method', 'amount', 'people')
+    list_display = ('id', 'timestamp', 'method', 'amount', 'people', 'identifier')
     search_fields = ('identifier','memberships__person__name')
-    
+
     # Just about everything. Don't need people doctoring the evidence.
     readonly_fields = (
         'user','timestamp','method','amount','ui_used','authcode',
         'transaction_id','identifier'
     )
-    
+
     def people(self, obj):
         return ", ".join([p.person.name for p in obj.memberships.all()])
-        
+
     ordering = ('-timestamp',)
     inlines = (MembershipInline,)
 
@@ -59,6 +59,7 @@ class PersonOptions(admin.ModelAdmin):
     )
     search_fields = ('name', 'con_name', 'email')
     list_display = ('name', 'con_name', 'email', 'affiliation')
+    list_filter = ('affiliation','public')
     inlines = (MembershipInline,)
 
 
@@ -89,7 +90,7 @@ class MembershipSoldOptions(admin.ModelAdmin):
         }),
     )
     list_filter = ('needs_printed', 'type', 'state')
-    readonly_fields = ('person','payment','price')
+    readonly_fields = ('payment','price')
 
     def reprint(modeladmin, request, queryset):
         queryset.update( needs_printed=True, print_timestamp=datetime.now() )

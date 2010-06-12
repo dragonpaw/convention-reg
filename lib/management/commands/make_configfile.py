@@ -25,6 +25,9 @@ DEFAULTS = {
         'transaction_type': 'CREDIT',
         'use_transparent': True,
     },
+    'selfserve': {
+        'payment_method': 'Credit Card',
+    },
     'general': {
         'debugging': False
     },

@@ -10,7 +10,7 @@ from convention.lib import payment_gateways
 
 color_list = colors.getAllNamedColors().keys()
 color_list.sort()
-COLOR_OPTIONS = [  (x, x) for x in color_list ]
+COLOR_OPTIONS = [(x, x) for x in color_list]
 
 
 # Create your models here.
@@ -180,39 +180,30 @@ class PaymentMethod(models.Model):
 
         amount = payment.amount
 
-        zip = form.cleaned_data['zip']
-
         ip = request.META['REMOTE_ADDR']
 
-        #'BNAME': form.card_name,
-        #'BADDR1': form.address,
-        #'BCUST_EMAIL': form.email,
-
-        #'override_email_customer': 'N',
-        #'override_trans_customer': 'N',
+        args = form.cleaned_data.copy()
+        args['invoice'] = payment.pk
 
         if settings.LOCAL_SETTINGS.get('quantum_gateway','use_transparent'):
-            transparent = True
-            number = form.cleaned_data['number']
-            month = form.cleaned_data['month']
-            year = form.cleaned_data['year']
-            cvv = form.cleaned_data['cvv']
+            args['transparent'] = True
+            #number = form.cleaned_data['number']
+            #expires = form.cleaned_data['expires']
+            #month = expires.month
+            #year = expires.year
+            #cvv = form.cleaned_data['cvv']
         else:
-            transparent = False
-            number = None
-            month = None
-            year = None
-            cvv = None
+            args['transparent'] = False
+            #number = None
+            #month = None
+            #year = None
+            #cvv = None
 
         try:
-            auth, id = payment_gateways.quantum_gateway(
-                login, key, amount, zip=zip, ip=ip,
-                number=number, month=month, year=year, cvv=cvv,
-                transparent=transparent, trans_type=trans_type
-            )
+            auth, id = payment_gateways.quantum_gateway(login, key, amount, **args)
             payment.authcode = auth
             payment.transaction_id = id
-            payment.identifier = number[-4:]
+            payment.identifier = args['number'][-4:]
             payment.save()
             return True
         except payment_gateways.PaymentDeclinedError, e:
@@ -313,7 +304,7 @@ class Payment(models.Model):
     comment = models.CharField(max_length=500, blank=True, default='')
     authcode = models.CharField("Credit card gateway authorization code.", max_length=10, null=True, blank=True)
     transaction_id = models.CharField("Credit card gateway transaction ID.", max_length=10, null=True, blank=True)
-    identifier = models.IntegerField("Check #, or partial CC #.", null=True, blank=True)
+    identifier = models.IntegerField("Partial CC #.", null=True, blank=True)
 
     error_message = None
 

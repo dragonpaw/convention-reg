@@ -4,59 +4,73 @@ import urllib, urllib2
 class PaymentDeclinedError(RuntimeError):
     pass
 
-def quantum_gateway(login, key, amount, zip=None, name=None, address=None, email=None, ip=None, invoice=None, number=None, month=None, year=None, cvv=None, transparent=True, trans_type=None):
+def quantum_gateway(
+    login, key, amount, zip=None, name=None, address=None, send_email=True,
+    description=None, email=None, ip=None, invoice=None, number=None,
+    expires=None, month=None, year=None, cvv=None, transparent=True,
+    trans_type=None):
+
     log = logging.getLogger('lib.payment_gateways.quantum_gateway')
 
-    # Can't use a dict, as the API is oddly sensitive to ordering. (WTF?!)
-    values = [
-        ('gwlogin', login),
-        ('RestrictKey', key),
-        ('trans_method', 'CC'),
-        ('amount', str(amount)),
-        ('Dsep', 'Pipe'),
-    ]
+    values = {
+        'gwlogin': login,
+        'RestrictKey': key,
+        'trans_method': 'CC',
+        'amount': str(amount),
+        'Dsep': 'Pipe',
+    }
 
     if name:
-        values.append(('BNAME', name))
+        values['BNAME'] = name
 
     if address:
-        values.append(('BADDR1', address))
+        values['BADDR1'] = address
 
     if zip:
-        values.append(('BZIP1', zip))
+        values['BZIP1'] = zip
 
     if email:
-        values.append(('BCUST_EMAIL', email))
+        values['BCUST_EMAIL'] = email
 
-    #('override_email_customer', 'N'),
+    if description:
+        values['invoice_description'] = description
+
+    if send_email:
+        values['override_email_customer'] = 'Y'
     #('override_trans_customer', 'N'),
 
     if ip:
-        values.append(('customer_ip', ip))
+        values['customer_ip'] = ip
 
     if trans_type:
-        values.append(('trans_type', trans_type))
+        values['trans_type'] = trans_type
 
     if invoice:
-        values.append(('invoice_num', invoice))
+        values['invoice_num'] = invoice
 
     if transparent:
         url = 'https://secure.quantumgateway.com/cgi/tqgwdbe.php'
-        values.append(('ccnum', number))
-        values.append(('ccmo', "%02d" % int(month)))
-        values.append(('ccyr', year % 100))
+        values['ccnum'] = number
+        if expires:
+            values['ccmo'] = "%02d" % int(expires.month)
+            values['ccyr'] = expires.year % 100
+        else:
+            values['ccmo'] = "%02d" % int(month)
+            values['ccyr'] = year % 100
         if cvv:
-            values.append(('CVV2', cvv))
-            values.append(('CVVtype', 1)) # Is being passed.
+            values['CVV2'] = cvv
+            values['CVVtype'] = 1 # Is being passed.
     else:
         url = 'https://secure.quantumgateway.com/cgi/qgwdbe.php'
         raise NotImplementedError('Quantum Gateway Interactive not yet supported.')
 
     encoded = urllib.urlencode(values)
     req = urllib2.Request(url, encoded)
-    response = urllib2.urlopen(req)
-    reply = response.read()
-    #logging.debug(encoded)
+    try:
+        response = urllib2.urlopen(req)
+        reply = response.read()
+    except urllib2.URLError:
+        raise PaymentDeclinedError('Network error talking to payment gateway.')
     logging.info(reply)
 
     #Response Sequence: Transaction Status, Auth Code, Transaction ID, AVS Response, CVV2 Response, Maxmind Score, Decline Reason, Decline Error Number
