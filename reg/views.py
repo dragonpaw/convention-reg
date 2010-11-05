@@ -202,7 +202,7 @@ def checkout(request,is_selfserve=False):
     cart = _get_cart(request)
 
     # First, some sanity checks.
-    total = Decimal(0)
+    total = request.session['cart_total']
     error = False
     for person in cart:
         for type in cart[person]:
@@ -212,7 +212,6 @@ def checkout(request,is_selfserve=False):
             if person.memberships.filter(type=type).count() and not type.in_quantity:
                 messages.error(request, 'That membership has already been sold.')
                 error = True
-            total += type.price
     if error:
         transaction.rollback()
         request.session['payment_form'] = form

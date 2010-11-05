@@ -11,7 +11,7 @@ urlpatterns = patterns('convention.reg.views',
     (r'^cart/add/(?P<person_id>\d+)/(?P<type_id>\d+)/$', 'cart_add', {'qty': 1}),
     (r'^cart/add/$', 'cart_add'),
     (r'^cart/remove/(?P<person_id>\d+)/(?P<type_id>\d+)/$', 'cart_remove'),
-    (r'^cart/checkout/$', 'checkout'),
+    url(r'^cart/checkout/$', 'checkout', name='pos-checkout' ),
 
     (r'^selfserve/$', 'selfserve_index'),
     (r'^selfserve/check/email/$', 'selfserve_add_email'),

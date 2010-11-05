@@ -1,7 +1,7 @@
 {% if is_selfserve %}
     <form action="{% url selfserve-checkout %}" method="post">
 {% else %}
-    <form action="{% url reg.views.checkout %}" method="post">
+    <form action="{% url pos-checkout %}" method="post">
 {% endif %}
 {% csrf_token %}
 
