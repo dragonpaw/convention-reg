@@ -422,7 +422,15 @@ def selfserve_remove(request,email,type_id):
     _cart(request, person, type, 0)
     return redirect(selfserve_index)
 
-
+def _draw_string(pdf, alignment, x, y, text):
+    if alignment == 'left':
+        pdf.drawString(x, y, text)
+    elif alignment == 'center':
+        pdf.drawCentredString(x, y, text)
+    elif alignment == 'right':
+        pdf.drawRightString(x, y, text)
+    else:
+        raise ValueError("Alignment not one of 'left', 'right' or 'center': {0}".format(alignment))
 
 @permission_required('reg.print_badges')
 def print_pdf(request, pages=None):
@@ -456,9 +464,13 @@ def print_pdf(request, pages=None):
                 fill=True, stroke=False)
             p.setFillColor( tc )
             p.setFont(pos['affiliation']['font'], pos['affiliation']['font_size'])
-            p.drawCentredString(pos['affiliation']['text_x'],
-                                pos['affiliation']['text_y'],
-                                m.person.affiliation.tag)
+            _draw_string(
+                p,
+                pos['affiliation']['alignment'],
+                pos['affiliation']['text_x'],
+                pos['affiliation']['text_y'],
+                m.person.affiliation.tag,
+            )
 
         # Age stripe
         age = m.person.age_code()
@@ -473,7 +485,14 @@ def print_pdf(request, pages=None):
         elif age == 'unknown':
             p.setFillColor(colors.black)
             p.setFont(pos['age']['font'], pos['age']['font_size'])
-            p.drawCentredString(pos['age']['text_x'], pos['age']['text_y'], 'O')
+            _draw_string(
+                p,
+                pos['age']['alignment'],
+                pos['age']['text_x'],
+                pos['age']['text_y'],
+               'O'
+            )
+            #p.drawCentredString(pos['age']['text_x'], pos['age']['text_y'], 'O')
 
         # Name(s)
         if m.person.con_name:
@@ -484,16 +503,37 @@ def print_pdf(request, pages=None):
             name2 = None
         p.setFillColor(colors.black)
         p.setFont(pos['name1']['font'], pos['name1']['font_size'])
-        p.drawCentredString(pos['name1']['x'], pos['name1']['y'], name1 )
+        _draw_string(
+            p,
+            pos['name1']['alignment'],
+            pos['name1']['x'],
+            pos['name1']['y'],
+            name1,
+        )
+        #p.drawCentredString(pos['name1']['x'], pos['name1']['y'], name1 )
         if name2:
             p.setFont(pos['name2']['font'], pos['name2']['font_size'])
-            p.drawCentredString(pos['name2']['x'], pos['name2']['y'], name2 )
+            _draw_string(
+                p,
+                pos['name2']['alignment'],
+                pos['name2']['x'],
+                pos['name2']['y'],
+                name2,
+            )
+            #p.drawCentredString(pos['name2']['x'], pos['name2']['y'], name2 )
 
         # Code for type of badge
         if m.type.code:
             p.setFillColor(colors.black)
             p.setFont(pos['type_code']['font'], pos['type_code']['font_size'])
-            p.drawString(pos['type_code']['x'], pos['type_code']['y'], m.type.code)
+            _draw_string(
+                p,
+                pos['type_code']['alignment'],
+                pos['type_code']['x'],
+                pos['type_code']['y'],
+                m.type.code,
+            )
+            #p.drawString(pos['type_code']['x'], pos['type_code']['y'], m.type.code)
 
         # City, State
         if m.person.country == 'USA':
@@ -502,12 +542,26 @@ def print_pdf(request, pages=None):
             city_state = "{0}, {1}".format(m.person.city, m.person.country)
         p.setFillColor(colors.black)
         p.setFont(pos['city_state']['font'], pos['city_state']['font_size'])
-        p.drawCentredString(pos['city_state']['x'], pos['city_state']['y'], city_state)
+        _draw_string(
+            p,
+            pos['city_state']['alignment'],
+            pos['city_state']['x'],
+            pos['city_state']['y'],
+            city_state,
+        )
+        #p.drawCentredString(pos['city_state']['x'], pos['city_state']['y'], city_state)
 
         # Badge #
         p.setFillColor( tc )
         p.setFont(pos['number']['font'], pos['number']['font_size'])
-        p.drawRightString(pos['number']['x'], pos['number']['y'], str(m.badge_number))
+        _draw_string(
+            p,
+            pos['number']['alignment'],
+            pos['number']['x'],
+            pos['number']['y'],
+            str(m.badge_number),
+        )
+        #p.drawRightString(pos['number']['x'], pos['number']['y'], str(m.badge_number))
         p.setFillColor(colors.black)
 
         p.restoreState()
