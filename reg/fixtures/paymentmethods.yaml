@@ -1,0 +1,12 @@
+- fields: {gateway: cash, name: Cash}
+  model: reg.paymentmethod
+  pk: 2
+- fields: {gateway: cash, name: Check}
+  model: reg.paymentmethod
+  pk: 3
+- fields: {gateway: cash, name: Credit Card}
+  model: reg.paymentmethod
+  pk: 1
+- fields: {gateway: quantum, name: QuantumGateway}
+  model: reg.paymentmethod
+  pk: 4
