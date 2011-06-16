@@ -26,7 +26,7 @@ DEFAULTS = {
         'use_transparent': True,
     },
     'selfserve': {
-        'payment_method': 'Credit Card',
+        'payment_method': 'QuantumGateway',
     },
     'general': {
         'debugging': False

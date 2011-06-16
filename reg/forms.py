@@ -56,7 +56,7 @@ class MembershipForm(forms.ModelForm):
 
 class SelfServeAddMembershipForm(forms.Form):
     type_choices = [
-        (x.pk, '{0}: ${1}'.format(x,x.price)) for x in MembershipType.objects.available()
+        (x.pk, '{0}: ${1}'.format(x,x.price)) for x in MembershipType.objects.available(public=True)
     ]
 
     type = forms.ChoiceField(

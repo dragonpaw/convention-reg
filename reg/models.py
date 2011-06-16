@@ -41,12 +41,12 @@ class Event(models.Model):
 class Person(models.Model):
     name = models.CharField("Legal name", max_length=100)
     con_name = models.CharField('Badge name', max_length=100, blank=True, help_text="Otherwise will print real name")
-    address = models.CharField(max_length=100)
-    city = models.CharField(max_length=50)
-    state = models.CharField(max_length=20)
+    address = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=50, blank=True)
+    state = models.CharField(max_length=20, blank=True)
     zip = models.CharField(max_length=10, blank=True)
     country = models.CharField(max_length=20, default='USA')
-    phone = models.CharField(max_length=20)
+    phone = models.CharField(max_length=20, blank=True)
     birth_date = models.DateField(blank=True, null=True)
     affiliation = models.ForeignKey('Affiliation', blank=True, null=True)
     email = models.EmailField('Email Address', blank=True, default='')
@@ -99,12 +99,15 @@ class Person(models.Model):
 
 
 class MembershipTypeManager(models.Manager):
-    def available(self):
+    def available(self, public=False):
         today = date.today()
-        return super(MembershipTypeManager, self).get_query_set().filter(
+        qs = super(MembershipTypeManager, self).get_query_set().filter(
             sale_start__lte = today,
             sale_end__gte = today,
         )
+        if public:
+            qs = qs.filter(approval_needed=False)
+        return qs
 
 
 class MembershipType(models.Model):
