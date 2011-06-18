@@ -2,25 +2,9 @@
 {% block title %}Shopping Cart{% endblock %}
 
 {% block right %}
-{% include 'reg_checkout_form.html' with context %}
+{% include 'reg_checkout_form.html' %}
 {% endblock %}
 
 {% block content %}
-{% include 'reg_cart.html' with context %}
-<!--
-<div style="height: 3em;"></div>
-<form method="post" action="{% url reg.views.selfserve_add_email %}">
-    {% csrf_token %}
-    <table id="selfserve_add_email">
-        <caption>Add membership</caption>
-        <tbody>
-            <tr>
-                <th>Email</th>
-                <td><input type="text" name="email" id="id_email"/></td>
-                <td><a class="button submitlink" href="#"><span class="add">Add</span></a></td>
-            </tr>
-        </tbody>
-    </table>
-</form>
--->
+{% include 'reg_cart.html' %}
 {% endblock %}

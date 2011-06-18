@@ -22,12 +22,12 @@
     </thead>
     <tbody>
         {% for o in people %}
-        <tr class={{ loop.cycle('odd', 'even') }}>
+        <tr class={% cycle 'odd', 'even' %}>
             <td>
                 {% if is_public %}
                     {{ o.name }}
                 {% else %}
-                    <a href="{% url reg.views.person_view id=o.pk %}">
+                    <a href="{% url reg.views.member_view id=o.pk %}">
                         {{ o.name }}
                     </a>
                 {% endif %}
@@ -49,8 +49,8 @@
 
 {% block right %}
 {% if payment_form and not is_public %}
-    {% include 'reg_cart.html' with context %}
+    {% include 'reg_cart.html' %}
     <br><br>
-    {% include 'reg_checkout_form.html' with context %}
+    {% include 'reg_checkout_form.html' %}
 {% endif %}
 {% endblock %}

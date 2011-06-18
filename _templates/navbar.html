@@ -1,10 +1,10 @@
 <ul id="navbar">
     <li>Registration
         <ul>
-            <li><a href="/reg/">Main</a></li>
-            <li><a href="/reg/people/">List People</a></li>
-            <li><a href="/reg/person/add/">Add Person</a></li>
-            <li><a href="/reg/pending/">Pending badges</a></li>
+            <li><a href="{% url reg.views.index %}">Main</a></li>
+            <li><a href="{% url reg.views.member_list %}">List People</a></li>
+            <li><a href="{% url reg.views.member_add %}">Add Person</a></li>
+            <li><a href="{% url reg.views.print_pending %}">Pending badges</a></li>
         </ul>
     </li>
     <li>Reports
@@ -23,8 +23,8 @@
         </ul>
     </li>
 
-{% if user.is_authenticated() %}
-    <li>Logged in as:<br/>{{ user.get_full_name() }}
+{% if user.is_authenticated %}
+    <li>Logged in as: <strong>{{ user.username }}</strong>
     <ul>
     {% if user.is_staff %}
         <li><a href="/admin/">Admin</a></li>

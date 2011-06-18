@@ -2,14 +2,14 @@
 {% block title %}Detail: {{ person.name }}{% endblock %}
 
 {% block right %}
-{% include 'reg_cart.html' with context %}
+{% include 'reg_cart.html' %}
 <br><br>
-{% include "reg_checkout_form.html" with context %}
+{% include "reg_checkout_form.html" %}
 <p>Click on the membership type to add to cart. (Center of page.)</p>
 {% endblock %}
 
 {% block content %}
-<form action="{% url reg.views.person_view person.pk %}" method="post">
+<form action="{% url reg.views.member_view person.pk %}" method="post">
 {% csrf_token %}
 {% include 'reg_member_form.html' %}
 </form>
@@ -25,8 +25,8 @@
             <th>Price</th>
         </tr>
     </thead><tbody>
-        {% for t in types|not_in_cart %}
-            <tr class={{ loop.cycle('odd', 'even') }}>
+        {% for t in available_types %}
+            <tr class="{% cycle 'odd' 'even' %}">
                 <td class="left">{{ t.event.name }}</td>
                 <td class="left">
                     {% if t.in_quantity %}
@@ -59,21 +59,20 @@
         </tr>
     </thead><tbody>
         {% for m in memberships %}
-        <tr class={{ loop.cycle('odd', 'even') }}>
+        <tr class="{% cycle 'odd' 'even' %}">
             <td>{{ m.event.name }}</td>
             <td class="center">
                 {{ m.type.name }}
                 {% if m.quantity > 1%}<strong>x {{ m.quantity }}</strong>{% endif %}
             </td>
-            <td class="right">{{ m.badge_number|default('&mdash;', True)|safe }}</td>
+            <td class="right">{{ m.badge_number|default:'&mdash;' }}</td>
             <td class="right">{{ m.price }}</td>
             <td class="right">{{ m.payment_method }}</td>
             <td class="right">{{ m.comment }}</td>
         </tr>
+        {% empty %}
+            <tr><td colspan="6"><strong>None</strong></td></tr>
         {% endfor %}
-        {% if memberships.count() == 0 %}
-        <tr><td colspan="6"><strong>None</strong></td></tr>
-        {% endif %}
     </tbody>
 </table>
 {% endblock %}

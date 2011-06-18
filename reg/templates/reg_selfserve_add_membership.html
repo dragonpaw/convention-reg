@@ -8,7 +8,7 @@
         <caption>What membership would you like?</caption>
         <tbody>
             <tr><th scope="col">Email:</th><td>{{person.email}}</td></tr>
-            {{ form.as_table()|safe }}
+            {{ form.as_table }}
         </tbody>
         <tfoot>
             <tr><td colspan="2"><input type="submit" value="Add to cart" /></td></tr>
@@ -17,11 +17,5 @@
             </a></td></tr>
         </tfoot>
     </table>
-    <!--
-    <a href="#" class="button submitlink"><span class="add">Add to cart</span></a>
-    <a href="{% url reg.views.selfserve_index %}" class="button">
-        <span class="delete">Nevermind.</span>
-    </a>
-    -->
 </form>
 {% endblock %}

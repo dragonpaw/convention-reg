@@ -153,6 +153,7 @@ input[type='text'], select {
 
 a.button{
     background:url(../images/nicebutton/button.gif);
+    background-size:100% 100%;
     display:block;
     color:#555555;
     font-weight:bold;
@@ -161,10 +162,15 @@ a.button{
     margin-bottom:10px;
     margin-top:10px;
     text-decoration:none;
-    width:191px;
+    width:80px;
     padding: 0;
     border: 0;
 }
+
+#checkout a.button {
+    width: 190px;
+}
+
 a:hover.button{
     color:#0066CC;
 }

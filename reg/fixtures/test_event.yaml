@@ -1,0 +1,69 @@
+- fields: {badge_number: 4, name: Test, slug: test, to_print: true}
+  model: reg.event
+  pk: 1
+- fields:
+    approval_needed: false
+    code: DLR
+    event: 1
+    in_quantity: false
+    name: Dealer
+    numbered: true
+    price: '150'
+    requires: []
+    sale_end: 2020-12-31 00:00:00
+    sale_start: 2011-01-01 00:00:00
+  model: reg.membershiptype
+  pk: 3
+- fields:
+    approval_needed: false
+    code: DLR
+    event: 1
+    in_quantity: true
+    name: Dealer Addon
+    numbered: true
+    price: '50'
+    requires: [3]
+    sale_end: 2020-12-31 00:00:00
+    sale_start: 2011-01-01 00:00:00
+  model: reg.membershiptype
+  pk: 4
+- fields:
+    approval_needed: false
+    code: FUL
+    event: 1
+    in_quantity: false
+    name: Full
+    numbered: true
+    price: '50'
+    requires: []
+    sale_end: 2020-12-31 00:00:00
+    sale_start: 2011-01-01 00:00:00
+  model: reg.membershiptype
+  pk: 1
+- fields:
+    approval_needed: false
+    code: KID
+    event: 1
+    in_quantity: true
+    name: Kid-in-tow
+    numbered: true
+    price: '20'
+    requires: [3, 1, 2]
+    sale_end: 2020-12-31 00:00:00
+    sale_start: 2011-01-01 00:00:00
+  model: reg.membershiptype
+  pk: 5
+- fields:
+    approval_needed: true
+    code: STF
+    event: 1
+    in_quantity: false
+    name: Staff
+    numbered: true
+    price: '0'
+    requires: []
+    sale_end: 2020-12-31 00:00:00
+    sale_start: 2011-01-01 00:00:00
+  model: reg.membershiptype
+  pk: 2
+

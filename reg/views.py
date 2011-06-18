@@ -10,13 +10,16 @@ from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.http import HttpResponse, Http404
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render_to_response
 from django.contrib.auth.decorators import login_required, permission_required
 
-from convention.lib.jinja import render, render_to_response
+
+#from convention.lib.jinja import render, render_to_response
+from convention.decorators import render_template
 from convention.reg import forms
 from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
 from convention.reg.pdf import pos, start
+from convention.reg.cart import Cart
 
 try:
     selfserve_gateway = settings.LOCAL_SETTINGS.get('selfserve','payment_method')
@@ -34,7 +37,7 @@ def _process_member_form(request, person=None):
             form = forms.MemberForm(request.POST)
         if form.is_valid():
             form.person = form.save() # Save it into the form so it can be found.
-            messages.success(request,'{0} updated.'.format(person))
+            messages.success(request,'{0} updated.'.format(form.person))
     else:
         if person:
             return forms.MemberForm(instance=person)
@@ -43,10 +46,35 @@ def _process_member_form(request, person=None):
 
     return form
 
+def _available_types(member, cart):
+    available = list()
+    for type in MembershipType.objects.available().select_related('event'):
+    # For types we are going to buy, or did buy, only show those that
+    # can come in multiples. (Assumes dependencies were met already.)
+        if cart.has(member, type) or member.memberships.filter(type=type).count():
+            if type.in_quantity:
+                available.append(type)
+            else:
+                pass # Don't re-add a non-in_quantity type.
+        # Otherwise, check for dependencies.
+        else:
+            if type.requires.count() == 0:
+                available.append(type)
+            else:
+                for r in type.requires.all():
+                    if cart.has(member, r) or member.memberships.filter(type=r).count():
+                        available.append(type)
+                        break
+    return available
+
+def _get_cart(request):
+    if 'cart' not in request.session:
+        request.session['cart'] = Cart()
+    return request.session['cart']
 
 @permission_required('reg.add_person')
-@render('reg_member_add.html')
-def person_add(request):
+@render_template
+def member_add(request):
     form = _process_member_form(request)
 
     if request.method == 'POST':
@@ -57,14 +85,14 @@ def person_add(request):
         print form.errors
 
     if request.method == 'POST' and form.is_valid():
-        return redirect(person_view, form.person.pk)
+        return redirect(member_view, form.person.pk)
     else:
         return { 'form': form }
 
 
 @permission_required('reg.change_person')
-@render('reg_member_list.html')
-def people_list(request):
+@render_template
+def member_list(request):
     if 'payment_form' in request.session and request.session['payment_form']:
         payment_form = request.session['payment_form']
     else:
@@ -77,10 +105,11 @@ def people_list(request):
 
 
 @permission_required('reg.change_person')
-@render('reg_member_view.html')
-def person_view(request, id):
+@render_template
+def member_view(request, id):
     person = get_object_or_404(Person, pk=id)
     current = list()
+    cart = _get_cart(request)
 
     memberships = person.memberships.all()
     for m in memberships:
@@ -99,62 +128,10 @@ def person_view(request, id):
         'payment_form': payment_form,
         'memberships': memberships,
         'current_events': current,
-        'cart': _get_cart(request),
+        'cart': cart,
+        'available_types': _available_types(person, cart),
         'is_selfserve': False, # used to show a different cart view for self serve.
     }
-
-
-def _cart_struct():
-    return defaultdict(int)
-
-
-def _get_cart(request):
-    if 'cart' not in request.session:
-        request.session['cart'] = defaultdict(_cart_struct)
-    if 'cart_quantity' not in request.session:
-        request.session['cart_quantity'] = 0
-    if 'cart_total' not in request.session:
-        request.session['cart_total'] = 0
-    return request.session['cart']
-
-
-def _cart(request, person, type, qty=1):
-    """Cart manipulation helper.
-
-    Requires: Person and MembershipType.
-    Optional: quantity. Defaults to 1. Pass 0 to delete from cart.
-
-    Quantity over 1 for types that don't accept a quantity is ignored silently.
-    """
-    cart = _get_cart(request)
-
-    if qty:
-        if type.in_quantity:
-            cart[person][type] += qty
-        else:
-            cart[person][type] = 1
-    else:
-        try:
-            del cart[person][type]
-        except KeyError:
-            pass
-
-    total = Decimal(0)
-    quantity = 0
-    for p in cart:
-        for t in cart[p]:
-            total += (t.price * cart[p][t])
-            quantity += 1
-    request.session['cart_total'] = total
-    request.session['cart_quantity'] = quantity
-
-
-def _cart_empty(request):
-    for key in ('cart', 'payment_form'):
-        if key in request.session:
-            del request.session[key]
-    request.session['cart_total'] = 0
-    request.session['cart_quantity'] = 0
 
 
 @permission_required('reg.add_membership')
@@ -162,7 +139,10 @@ def cart_remove(request, person_id, type_id):
     person = Person.objects.get(pk=person_id)
     type = MembershipType.objects.get(pk=type_id)
 
-    _cart(request, person, type, 0)
+    cart = _get_cart(request)
+    cart.remove(person, type)
+    request.session['cart'] = cart # Force a save.
+
     return redirect(request.META['HTTP_REFERER'])
 
 
@@ -172,7 +152,10 @@ def cart_add(request, person_id=None, type_id=None, qty=1):
     type = MembershipType.objects.get(pk=type_id)
     qty = int(qty) # If passed in from URL, will be unicode.
 
-    _cart(request, person, type, qty)
+    cart = _get_cart(request)
+    cart.add(person, type, qty)
+    request.session['cart'] = cart # Force a save.
+
     if 'next' in request.POST:
         return redirect(request.POST['next'])
     else:
@@ -202,16 +185,11 @@ def checkout(request,is_selfserve=False):
     cart = _get_cart(request)
 
     # First, some sanity checks.
-    total = request.session['cart_total']
     error = False
-    for person in cart:
-        for type in cart[person]:
-            # Comes from the use of defaultdicts.
-            if cart[person][type] == 0:
-                continue
-            if person.memberships.filter(type=type).count() and not type.in_quantity:
-                messages.error(request, 'That membership has already been sold.')
-                error = True
+    for item in cart:
+        if item.person.memberships.filter(type=item.type).count() and not item.type.in_quantity:
+            messages.error(request, 'That membership has already been sold.')
+            error = True
     if error:
         transaction.rollback()
         request.session['payment_form'] = form
@@ -227,7 +205,7 @@ def checkout(request,is_selfserve=False):
         payment.method = form.cleaned_data['method']
         payment.comment = form.cleaned_data['comment']
         payment.ui_used = 'event'
-    payment.amount = total
+    payment.amount = cart.total
     payment.save()
 
     if not payment.process(form=form, request=request):
@@ -243,22 +221,16 @@ def checkout(request,is_selfserve=False):
         else:
             return redirect(person_view, person.pk)
 
+    for item in cart:
+        membership = MembershipSold()
+        membership.person = item.person
+        membership.type = item.type
+        membership.price = item.type.price
+        membership.quantity = item.quantity
+        membership.payment = payment
+        membership.save()
 
-    for person in cart:
-        for type in cart[person]:
-            # Comes from the use of defaultdicts.
-            if cart[person][type] == 0:
-                continue
-
-            membership = MembershipSold()
-            membership.person = person
-            membership.type = type
-            membership.price = type.price * cart[person][type]
-            membership.quantity = cart[person][type]
-            membership.payment = payment
-            membership.save()
-
-    _cart_empty(request)
+    request.session['cart'] = Cart()
     messages.success(request, "Payment accepted")
     transaction.commit()
     if is_selfserve:
@@ -268,18 +240,21 @@ def checkout(request,is_selfserve=False):
 
 
 @permission_required('reg.print_badges')
-@render('reg_pending.html')
+#@render('reg_pending.html')
+@render_template
 def print_pending(request):
     q = MembershipSold.objects.to_print()
     return { 'objects': q }
 
 
-@render('reg_index.html')
+#@render('reg_index.html')
+@render_template
 def index(request):
     return {}
 
 
-@render('reg_member_list.html')
+#@render('reg_member_list.html')
+@render_template
 def report_member(request, slug=None, public_only=False):
     if slug:
         event = Event.objects.get(slug=slug)
@@ -304,8 +279,9 @@ def report_member(request, slug=None, public_only=False):
     }
 
 
-@render('reg_approval_report.html')
-def approvals(request, slug):
+#@render('reg_approval_report.html')
+@render_template
+def approvals_report(request, slug):
     event = Event.objects.get(slug=slug)
     title = event.name
 
@@ -320,7 +296,8 @@ def approvals(request, slug):
     }
 
 
-@render('reg_selfserve_index.html')
+#@render('reg_selfserve_index.html')
+@render_template
 def selfserve_index(request):
     form = forms.SelfServePaymentForm()
     return {
@@ -330,7 +307,8 @@ def selfserve_index(request):
     }
 
 
-@render('reg_selfserve_add_email.html')
+#@render('reg_selfserve_add_email.html')
+@render_template
 def selfserve_add_email(request):
     if request.method == 'GET':
         return {}
@@ -351,7 +329,8 @@ def selfserve_add_email(request):
             return redirect(selfserve_index)
 
 
-@render('reg_selfserve_add_person.html')
+#@render('reg_selfserve_add_person.html')
+@render_template
 def selfserve_add_person(request):
     if request.method == 'GET':
         form = forms.SelfServeAddMemberForm(
@@ -375,7 +354,8 @@ def selfserve_add_person(request):
                 return redirect(selfserve_add_membership)
 
 
-@render('reg_selfserve_add_membership.html')
+#@render('reg_selfserve_add_membership.html')
+@render_template
 def selfserve_add_membership(request):
     person = Person.objects.get(pk=request.session['selfserve_person'])
 
@@ -410,7 +390,9 @@ def selfserve_add_membership(request):
                 'form': form,
             }
         else:
-            _cart(request, person, type, quantity)
+            cart = _get_cart(request)
+            cart.add(person, type, quantity)
+            request.session['cart'] = cart
             messages.success(request,'Membership added to cart.')
             return redirect(selfserve_index)
 

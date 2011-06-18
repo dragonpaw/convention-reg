@@ -12,7 +12,7 @@ CONFIG_FILE = os.path.join(ROOT_DIR, 'config.ini')
 LOCAL_SETTINGS = update_file(CONFIG_FILE)
 
 DEBUG = LOCAL_SETTINGS.getboolean('general', 'debugging')
-TEMPLATE_DEBUG = False # Jinja2 templating in use.
+TEMPLATE_DEBUG = DEBUG # Jinja2 templating in use.
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
@@ -98,7 +98,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.csrf',
     'django.contrib.messages.context_processors.messages',
     "convention.reg.context_processors.open_events",
-    'context_processors.add_session',
+    'convention.context_processors.add_session',
 )
 
 

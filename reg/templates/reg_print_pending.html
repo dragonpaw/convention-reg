@@ -2,8 +2,8 @@
 {% block title %}Badges Pending{% endblock %}
 
 {% block content %}
-<p>Badges pending: {{ objects.count() }}</p>
-{% if objects.count() %}
+<p>Badges pending: {{ objects.count }}</p>
+{% if objects.count %}
 <p>
     <strong>Don't click on this if you're not the guy who is supposed to print badges.</strong>
     <ul>

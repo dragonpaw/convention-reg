@@ -2,7 +2,7 @@
 {% block title %}Add person{% endblock %}
 
 {% block content %}
-<form method="post" action="{% url reg.views.person_add %}">
+<form method="post" action="{% url reg.views.member_add %}">
 {% csrf_token %}
 {% include 'reg_member_form.html' %}
 </form>

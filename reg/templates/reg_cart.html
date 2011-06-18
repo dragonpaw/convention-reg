@@ -13,37 +13,28 @@
             <th class="subhead">Action</th>
         </tr>
     </thead><tbody>
-        {% set row_class = cycler('odd', 'even') %}
-
-
-        {% if request.session.cart_quantity == 0 %}
-        <tr><td colspan="4"><strong>Cart is empty. Buy something!</strong></td></tr>
-        {% endif %}
-        {% for p in cart %}
-            {% for t in cart[p] %}
-            {% set qty = cart[p][t] %}
-            {% if qty %}
-            <tr class={{ row_class.next() }}>
+        {% for item in cart %}
+            <tr class="{% cycle 'odd' 'even' %}">
                 <td class="left">
-                    {%- if is_selfserve %} {{p.email}} {% else %} {{p.name}} {% endif -%}
+                    {% if is_selfserve %} {{item.person.email}} {% else %} {{item.person.name}} {% endif %}
                 </td>
-                <td class="center">{{t.event.name}}: {{t.name}}
-                    {% if qty > 1 %} x {{qty}}{% endif %}
+                <td class="center">{{item.type.event.name}}: {{item.type.name}}
+                    {% if item.quantity > 1 %} x {{item.quantity}} {% endif %}
                 </td>
-                <td class="right">${{t.price * qty}}</td>
+                <td class="right">${{item.price}}</td>
                 <td>
                     <a class="button"
-                    {%- if is_selfserve -%}
-                       href="{% url reg.views.selfserve_remove p.email,t.pk %}"
+                    {% if is_selfserve %}
+                       href="{% url reg.views.selfserve_remove p.email item.type.pk %}"
                     {% else %}
-                        href="{% url reg.views.cart_remove p.pk,t.pk %}"
+                        href="{% url reg.views.cart_remove item.person.pk item.type.pk %}"
                     {% endif %}
                     >
                         <span class="delete">Remove</span></a>
                 </td>
             </tr>
-            {% endif %}
-            {% endfor %}
+        {% empty %}
+            <tr><td colspan="4"><strong>Cart is empty. Buy something!</strong></td></tr>
         {% endfor %}
         {% if is_selfserve %}
             <tr>
@@ -52,13 +43,11 @@
                 <td><a class="button submitlink" href="#"><span class="add">Add</span></a></td>
             </tr>
         {% endif %}
-
     </tbody>
-
     <tfoot>
         <tr>
             <th>Total</th>
-            <td colspan="3" class="right">{{ session.cart_total|default('0.00', true) }}</td>
+            <td colspan="3" class="right">{{ cart.total|floatformat:2 }}</td>
         </tr>
     </tfoot>
 </table>

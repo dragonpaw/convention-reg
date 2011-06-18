@@ -1,8 +1,8 @@
-from coffin.conf.urls.defaults import *
-from convention import settings
-
-# Uncomment the next two lines to enable the admin:
+#from django.conf import settings
+from django.conf.urls.defaults import *
+from django.conf import settings
 from django.contrib import admin
+
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -16,12 +16,11 @@ urlpatterns = patterns('',
     # to INSTALLED_APPS to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
-    # Uncomment the next line to enable the admin:
     (r'^admin/', include(admin.site.urls)),
-    (r'^static/(?P<path>.*)$', 'django.views.static.serve',
-        {'document_root': settings.STATIC_DIR})
 )
 
-# Gotta put it somewhere, and not in settings.py.
-from convention.lib.setup_log_handler import setup_handler
-setup_handler()
+if settings.DEBUG:
+    urlpatterns += patterns('',
+        (r'^static/(?P<path>.*)$', 'django.views.static.serve',
+            {'document_root': settings.STATIC_DIR})
+    )

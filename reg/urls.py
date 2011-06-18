@@ -1,11 +1,11 @@
-from coffin.conf.urls.defaults import *
+from django.conf.urls.defaults import *
 
 urlpatterns = patterns('convention.reg.views',
     (r'^$', 'index'),
 
-    (r'^person/add/$', 'person_add'),
-    (r'^people/$', 'people_list'),
-    (r'^person/(?P<id>\d+)/$', 'person_view'),
+    (r'^person/add/$', 'member_add'),
+    (r'^people/$', 'member_list'),
+    (r'^person/(?P<id>\d+)/$', 'member_view'),
 
     (r'^cart/add/(?P<person_id>\d+)/(?P<type_id>\d+)/(?P<qty>\d+)/$', 'cart_add'),
     (r'^cart/add/(?P<person_id>\d+)/(?P<type_id>\d+)/$', 'cart_add', {'qty': 1}),
@@ -29,5 +29,5 @@ urlpatterns = patterns('convention.reg.views',
     (r'^report/members/all/(?P<slug>[\w\-]+)/$', 'report_member'),
     (r'^report/members/public/(?P<slug>[\w\-]+)/$', 'report_member', {'public_only':True}),
 
-    (r'^report/members/approvals/(?P<slug>[\w\-]+)/$', 'approvals'),
+    (r'^report/members/approvals/(?P<slug>[\w\-]+)/$', 'approvals_report'),
 )

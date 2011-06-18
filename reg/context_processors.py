@@ -6,5 +6,5 @@ from convention.reg.models import MembershipType, Event
 def open_events(request):
     return {
         'events': Event.objects.all(),
-        'types': MembershipType.objects.available().select_related('event')
+        #'types': MembershipType.objects.available().select_related('event')
     }
