@@ -11,9 +11,9 @@
         <ul>
             <li><a href="/reg/report/members/public/">Members (Public)</a></li>
             {% for e in events %}
-                <li><a href="/reg/report/members/all/{{e.slug}}/">{{e.name}}</a></li>
-                <li><a href="/reg/report/members/public/{{e.slug}}/">{{e.name}} (Public)</a></li>
-                <li><a href="/reg/report/members/approvals/{{e.slug}}/">{{e.name}} (Approvals)</a></li>
+                <li><a href="{% url reg.views.report_member e.slug %}">{{e.name}}</a></li>
+                <li><a href="{% url reg.views.report_public e.slug %}">{{e.name}} (Public)</a></li>
+                <li><a href="{% url reg.views.approvals_report e.slug %}">{{e.name}} (Approvals)</a></li>
             {% endfor %}
         </ul>
     </li>
@@ -27,12 +27,12 @@
     <li>Logged in as: <strong>{{ user.username }}</strong>
     <ul>
     {% if user.is_staff %}
-        <li><a href="/admin/">Admin</a></li>
+        <li><a href="{% url admin:index %}">Admin</a></li>
     {% endif %}
-        <li><a href="/accounts/logout/">Logout</a></li>
+        <li><a href="{% url django.contrib.auth.views.logout %}">Logout</a></li>
     </ul>
     </li>
 {% else %}
-    <li><a href="/accounts/login/">Login</a></li>
+    <li><a href="{% url django.contrib.auth.views.login %}">Login</a></li>
 {% endif %}
 </ul>
