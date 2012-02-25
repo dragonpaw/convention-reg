@@ -255,7 +255,7 @@ def index(request):
 
 #@render('reg_member_list.html')
 @render_template
-def report_member(request, slug=None, public_only=False):
+def member_report(request, slug=None, public_only=False):
     if slug:
         event = Event.objects.get(slug=slug)
     else:

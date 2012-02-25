@@ -14,7 +14,7 @@
         </tr>
     </thead><tbody>
         {% for o in objects %}
-    <tr class="{{ o.state }} {{ o.state }}-{{ loop.cycle ('odd', 'even') }}">
+    <tr class="{{ o.state }} {{ o.state }}-{% cycle 'odd' 'even' %}">
         <td>{{ o.person.name }}</td>
         <td>{{ o.person.city }}, {{ o.person.state }}</td>
         <td>{{ o.person.email }}</td>

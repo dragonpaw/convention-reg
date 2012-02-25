@@ -14,6 +14,13 @@ LOCAL_SETTINGS = update_file(CONFIG_FILE)
 DEBUG = LOCAL_SETTINGS.getboolean('general', 'debugging')
 TEMPLATE_DEBUG = DEBUG # Jinja2 templating in use.
 
+STATICFILES_DIRS = (
+    STATIC_DIR,
+)
+
+STATIC_ROOT = LOCAL_SETTINGS.get('static', 'path')
+STATIC_URL = LOCAL_SETTINGS.get('static', 'url')
+
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
@@ -62,7 +69,7 @@ LOGIN_REDIRECT_URL='/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+#ADMIN_MEDIA_PREFIX = '/static/media/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = LOCAL_SETTINGS.get('security', 'secret_key')
@@ -103,6 +110,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 
 INSTALLED_APPS = (
+    'django.contrib.staticfiles',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

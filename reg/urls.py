@@ -24,10 +24,10 @@ urlpatterns = patterns('convention.reg.views',
     (r'^pdf/$', 'print_pdf'),
     (r'^pdf/(?P<pages>\d+)/$', 'print_pdf'),
 
-    (r'^report/members/public/$', 'report_member', {'public_only':True}),
+    url(r'^report/members/public/$', 'member_report', {'public_only':True}, name='public_report_all' ),
 
-    (r'^report/members/all/(?P<slug>[\w\-]+)/$', 'report_member'),
-    (r'^report/members/public/(?P<slug>[\w\-]+)/$', 'report_member', {'public_only':True}, 'reg.views.report_public'),
+    (r'^report/members/all/(?P<slug>[\w\-]+)/$', 'member_report'),
+    url(r'^report/members/public/(?P<slug>[\w\-]+)/$', 'member_report', {'public_only':True}, name='public_report_event'),
 
     (r'^report/members/approvals/(?P<slug>[\w\-]+)/$', 'approvals_report'),
 )

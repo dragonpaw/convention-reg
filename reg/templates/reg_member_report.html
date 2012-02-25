@@ -12,9 +12,9 @@
     </thead>
     <tbody>
         {% for o in people %}
-        <tr class={{ loop.cycle('odd', 'even') }}>
+        <tr class={% cycle 'odd' 'even' %}>
             <td>
-                <a href="{% url reg.views.person_view id=o.pk %}">
+                <a href="{% url reg.views.member_view id=o.pk %}">
                     {{ o.name }}
                 </a>
             </td>

@@ -43,6 +43,10 @@ DEFAULTS = {
         'server': 'localhost',
         'from_address': '',
     },
+    'static': {
+        'url': 'http://static.example.com/',
+        'path': '/path/to/static',
+    }
 }
 
 def update_file(filename):
