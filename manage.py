@@ -1,4 +1,9 @@
-#!/usr/bin/env python2.7
+#!/usr/local/oracle/bin/python
+import sys
+import os
+ROOT_DIR = os.path.dirname(__file__)
+sys.path.append(ROOT_DIR)
+
 from django.core.management import execute_manager
 try:
     import settings # Assumed to be in the same directory.

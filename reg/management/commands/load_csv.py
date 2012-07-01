@@ -23,7 +23,7 @@ class Command(BaseCommand):
         try:
             filename = args[0]
             event_name = args[1]
-            type_name = args[2]
+            # type_name = args[2]
         except IndexError:
             print "Syntax: load_csv <filename> <event_name> <type_name>"
             sys.exit(1)
@@ -32,14 +32,18 @@ class Command(BaseCommand):
         type = MembershipType.objects.get(event=event, name=type_name)
 
         file = csv.DictReader(open(filename))
-        for rows in file:
+        for row in file:
 
             # First, handle making the member.
-            full_name = rows['FULLNAME']
+            if 'FULLNAME' in row:
+                full_name = row['FULLNAME']
+            else:
+                full_name = ' '.join([row[FIRST], row[LAST]])
+            full_name = full_name.strip()
 
-            # Skip blank rows.
-            if not full_name:
-                continue
+            # Skip blank row.
+            # if not full_name:
+            #     continue
 
             try:
                 member = Person.objects.get(name=full_name)
@@ -47,17 +51,19 @@ class Command(BaseCommand):
                 member = Person(name=full_name)
                 added_members += 1
 
-            member.address = rows['ADDRESS']
-            member.city = rows['CITY']
-            member.state = rows['STATE']
-            member.zip = rows['ZIP']
-            member.email = rows['EMAIL']
-            member.phone = rows['PHONE']
+            member.address = row['ADDRESS']
+            member.city = row['CITY']
+            member.state = row['STATE']
+            member.zip = row['ZIP']
+            member.email = row['EMAIL']
+            member.phone = row['PHONE']
             # Model defaults to US
-            if rows['COUNTRY']:
-                member.country = rows['COUNTRY']
+            if row['COUNTRY']:
+                member.country = row['COUNTRY']
+            if 'PUBLIC' in row:
+                member.public = 'y' in row['PUBLIC'].lower()
 
-            member.con_name = rows['BADGENAME']
+            member.con_name = row['BADGENAME']
 
             # Done with the member.
             try:
@@ -76,21 +82,32 @@ class Command(BaseCommand):
             print 'Person: {0}'.format(member)
             added_memberships += 1
 
-            membership.badge_number = rows['BADGENUM']
-            membership.comment = rows['COMMENTS']
+            if 'BADGENUM' in row:
+                membership.badge_number = row['BADGENUM']
+            if 'COMMENT' in row:
+                membership.comment = row['COMMENT']
 
-            if rows['AMOUNTPAID']:
-                membership.price = Decimal(rows['AMOUNTPAID'].replace('$',''))
+            if 'AMOUNTPAID' in row:
+                membership.price = Decimal(row['AMOUNTPAID'].replace('$',''))
             else:
                 membership.price = 0
 
+            if 'QUANTITY' in row and int(row['QUANTITY']) > 1:
+                membership.quantity = row['QUANTITY']
+
+            if 'HOWPAID' in row:
+                how = row['HOWPAID']
+            else:
+                how = 'CSV load'
             try:
-                method = PaymentMethod.objects.get(name=rows['HOWPAID'])
+                method = PaymentMethod.objects.get(name=how)
             except PaymentMethod.DoesNotExist:
-                method = PaymentMethod(name=rows['HOWPAID'])
+                method = PaymentMethod(name=how)
                 method.save()
             membership.payment_method = method
 
             membership.print_timestamp = now
             membership.save()
-        print "Added {0} members, and {1} memberships.".format(added_members, added_memberships)
+        print "Added {0} members, and {1} memberships.".format(
+            added_members, added_memberships
+        )

@@ -4,7 +4,7 @@ from decimal import Decimal
 from math import ceil
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
+import sys
 
 from django.conf import settings
 from django.contrib import messages
@@ -15,11 +15,10 @@ from django.contrib.auth.decorators import login_required, permission_required
 
 
 #from convention.lib.jinja import render, render_to_response
-from convention.decorators import render_template
-from convention.reg import forms
-from convention.reg.models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
-from convention.reg.pdf import pos, start
-from convention.reg.cart import Cart
+from .decorators import render_template
+import forms
+from .models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment
+from .cart import Cart
 
 try:
     selfserve_gateway = settings.LOCAL_SETTINGS.get('selfserve','payment_method')
@@ -28,6 +27,19 @@ except:
     raise RuntimeError('Self Service payment type in config points to non-existant method: {0}'.format(
         selfserve_gateway
     ))
+
+# Load the appropriate printing module
+printing_module_name = settings.LOCAL_SETTINGS.get('printing', 'module')
+printing_module_name = 'reg.printing_modules.{0}'.format(printing_module_name)
+try:
+    __import__(printing_module_name)
+    printing = sys.modules[printing_module_name]
+except Exception, e:
+    raise RuntimeError(
+        'Unable to load the specified printing module: {0}: {1}'.format(
+            printing_module_name, str(e)
+        )
+    )
 
 def _process_member_form(request, person=None):
     if request.method == 'POST':
@@ -404,16 +416,6 @@ def selfserve_remove(request,email,type_id):
     _cart(request, person, type, 0)
     return redirect(selfserve_index)
 
-def _draw_string(pdf, alignment, x, y, text):
-    if alignment == 'left':
-        pdf.drawString(x, y, text)
-    elif alignment == 'center':
-        pdf.drawCentredString(x, y, text)
-    elif alignment == 'right':
-        pdf.drawRightString(x, y, text)
-    else:
-        raise ValueError("Alignment not one of 'left', 'right' or 'center': {0}".format(alignment))
-
 @permission_required('reg.print_badges')
 def print_pdf(request, pages=None):
     response = HttpResponse(mimetype='application/pdf')
@@ -430,121 +432,10 @@ def print_pdf(request, pages=None):
 
         # Render the individual badge.
         p.saveState()
-        p.translate(*start[x])
+        p.translate(*printing.start[x])
 
-        # Colored affiliation bar
-        tc = colors.toColor('black')
-        if m.person.affiliation:
-            c = colors.toColor(str(m.person.affiliation.color))
-            tc = colors.toColor(str(m.person.affiliation.text_color))
-            p.setFillColor( c )
-            p.rect(
-                pos['affiliation']['x'],
-                pos['affiliation']['y'],
-                pos['affiliation']['w'],
-                pos['affiliation']['h'],
-                fill=True, stroke=False)
-            p.setFillColor( tc )
-            p.setFont(pos['affiliation']['font'], pos['affiliation']['font_size'])
-            _draw_string(
-                p,
-                pos['affiliation']['alignment'],
-                pos['affiliation']['text_x'],
-                pos['affiliation']['text_y'],
-                m.person.affiliation.tag,
-            )
-
-        # Age stripe
-        age = m.person.age_code()
-        if age in ('minor', '18'):
-            if age == 'minor':
-                p.setFillColor(colors.red)
-            elif age == '18':
-                p.setFillColor(colors.black)
-            p.rect(pos['age']['x'], pos['age']['y'],
-                   pos['age']['w'], pos['age']['h'],
-                   stroke=False, fill=True)
-        elif age == 'unknown':
-            p.setFillColor(colors.black)
-            p.setFont(pos['age']['font'], pos['age']['font_size'])
-            _draw_string(
-                p,
-                pos['age']['alignment'],
-                pos['age']['text_x'],
-                pos['age']['text_y'],
-               'O'
-            )
-            #p.drawCentredString(pos['age']['text_x'], pos['age']['text_y'], 'O')
-
-        # Name(s)
-        if m.person.con_name:
-            name1 = m.person.con_name
-            name2 = m.person.name
-        else:
-            name1 = m.person.name
-            name2 = None
-        p.setFillColor(colors.black)
-        p.setFont(pos['name1']['font'], pos['name1']['font_size'])
-        _draw_string(
-            p,
-            pos['name1']['alignment'],
-            pos['name1']['x'],
-            pos['name1']['y'],
-            name1,
-        )
-        #p.drawCentredString(pos['name1']['x'], pos['name1']['y'], name1 )
-        if name2:
-            p.setFont(pos['name2']['font'], pos['name2']['font_size'])
-            _draw_string(
-                p,
-                pos['name2']['alignment'],
-                pos['name2']['x'],
-                pos['name2']['y'],
-                name2,
-            )
-            #p.drawCentredString(pos['name2']['x'], pos['name2']['y'], name2 )
-
-        # Code for type of badge
-        if m.type.code:
-            p.setFillColor(colors.black)
-            p.setFont(pos['type_code']['font'], pos['type_code']['font_size'])
-            _draw_string(
-                p,
-                pos['type_code']['alignment'],
-                pos['type_code']['x'],
-                pos['type_code']['y'],
-                m.type.code,
-            )
-            #p.drawString(pos['type_code']['x'], pos['type_code']['y'], m.type.code)
-
-        # City, State
-        if m.person.country == 'USA':
-            city_state = "{0}, {1}".format(m.person.city, m.person.state)
-        else:
-            city_state = "{0}, {1}".format(m.person.city, m.person.country)
-        p.setFillColor(colors.black)
-        p.setFont(pos['city_state']['font'], pos['city_state']['font_size'])
-        _draw_string(
-            p,
-            pos['city_state']['alignment'],
-            pos['city_state']['x'],
-            pos['city_state']['y'],
-            city_state,
-        )
-        #p.drawCentredString(pos['city_state']['x'], pos['city_state']['y'], city_state)
-
-        # Badge #
-        p.setFillColor( tc )
-        p.setFont(pos['number']['font'], pos['number']['font_size'])
-        _draw_string(
-            p,
-            pos['number']['alignment'],
-            pos['number']['x'],
-            pos['number']['y'],
-            str(m.badge_number),
-        )
-        #p.drawRightString(pos['number']['x'], pos['number']['y'], str(m.badge_number))
-        p.setFillColor(colors.black)
+        for element in printing.elements(m):
+            element.render_to_canvas(p)
 
         p.restoreState()
         m.needs_printed = False

@@ -2,7 +2,7 @@
 import os
 import ConfigParser
 
-from convention.lib.management.commands.make_configfile import update_file
+from lib.management.commands.make_configfile import update_file
 
 ROOT_DIR = os.path.dirname(__file__)
 STATIC_DIR = os.path.join(ROOT_DIR, '_static')
@@ -12,7 +12,7 @@ CONFIG_FILE = os.path.join(ROOT_DIR, 'config.ini')
 LOCAL_SETTINGS = update_file(CONFIG_FILE)
 
 DEBUG = LOCAL_SETTINGS.getboolean('general', 'debugging')
-TEMPLATE_DEBUG = DEBUG # Jinja2 templating in use.
+TEMPLATE_DEBUG = DEBUG
 
 STATICFILES_DIRS = (
     STATIC_DIR,
@@ -61,7 +61,7 @@ MEDIA_ROOT = os.path.join(ROOT_DIR, '_static')
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/static'
+MEDIA_URL = '/static/media/'
 
 # Auth settings.
 LOGIN_REDIRECT_URL='/'
@@ -103,6 +103,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     "django.core.context_processors.request",
     "django.core.context_processors.media",
     'django.core.context_processors.csrf',
+    'django.core.context_processors.static',
     'django.contrib.messages.context_processors.messages',
     "convention.reg.context_processors.open_events",
     'convention.context_processors.add_session',
