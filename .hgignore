@@ -3,3 +3,4 @@ syntax: glob
 config.ini
 *.log
 *.kpf
+*.sublime-*
