@@ -11,8 +11,8 @@
         <ul>
             <li><a href="/reg/report/members/public/">Members (Public)</a></li>
             {% for e in events %}
-                <li><a href="{% url reg.views.member_report e.slug %}">{{e.name}}</a></li>
-                <li><a href="{% url public_report_event e.slug %}">{{e.name}} (Public)</a></li>
+                <li><a href="{% url private_member_report e.slug %}">{{e.name}}</a></li>
+                <li><a href="{% url public_member_report e.slug %}">{{e.name}} (Public)</a></li>
                 <li><a href="{% url reg.views.approvals_report e.slug %}">{{e.name}} (Approvals)</a></li>
             {% endfor %}
         </ul>

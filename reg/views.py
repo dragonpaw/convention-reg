@@ -280,7 +280,7 @@ def member_report(request, slug=None, public_only=False):
     if public_only:
         q = q.filter(public=True)
     else:
-        if not request.user.has_perm('reg.change_member'):
+        if not request.user.has_perm('reg.change_person'):
             raise Http404
 
     return {

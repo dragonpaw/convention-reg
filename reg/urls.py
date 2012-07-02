@@ -26,8 +26,8 @@ urlpatterns = patterns('reg.views',
 
     url(r'^report/members/public/$', 'member_report', {'public_only':True}, name='public_report_all' ),
 
-    (r'^report/members/all/(?P<slug>[\w\-]+)/$', 'member_report'),
-    url(r'^report/members/public/(?P<slug>[\w\-]+)/$', 'member_report', {'public_only':True}, name='public_report_event'),
+    url(r'^report/members/all/(?P<slug>[\w\-]+)/$', 'member_report', name='private_member_report'),
+    url(r'^report/members/public/(?P<slug>[\w\-]+)/$', 'member_report', {'public_only':True}, name='public_member_report'),
 
     (r'^report/members/approvals/(?P<slug>[\w\-]+)/$', 'approvals_report'),
 )

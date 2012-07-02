@@ -37,8 +37,8 @@
             </td>
             <td class="right">{{ m.badge_number|default:'&mdash;' }}</td>
             <td class="right">$ {{ m.price|floatformat:2 }}</td>
-            <td class="right">{{ m.payment_method }}</td>
-            <td class="right">{{ m.comment }}</td>
+            <td class="left">{{ m.payment.method }}</td>
+            <td class="left">{{ m.comment|default:'&mdash;' }}</td>
         </tr>
         {% empty %}
             <tr><td colspan="6"><strong>None</strong></td></tr>
