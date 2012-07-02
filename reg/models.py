@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db import models
 from django.template.defaultfilters import slugify
 
-from convention.lib import payment_gateways
+import payment_gateways
 
 color_list = colors.getAllNamedColors().keys()
 color_list.sort()
