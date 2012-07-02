@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('convention.reg.views',
+urlpatterns = patterns('reg.views',
     (r'^$', 'index'),
 
     (r'^person/add/$', 'member_add'),
