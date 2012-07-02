@@ -426,32 +426,32 @@ def print_pdf(request, pages=None):
 
     pending = MembershipSold.objects.to_print()
 
-    x = 1
+    current_badge = 1
     page = 1
-    for m in pending:
+    for membership in pending:
+        for num in range(1, membership.quantity+1):
+            # Render the individual badge.
+            p.saveState()
+            p.translate(*printing.start[current_badge])
 
-        # Render the individual badge.
-        p.saveState()
-        p.translate(*printing.start[x])
+            for element in printing.elements(membership, quantity):
+                element.render_to_canvas(p)
 
-        for element in printing.elements(m):
-            element.render_to_canvas(p)
+            p.restoreState()
+            membership.needs_printed = False
+            membership.print_timestamp = None
+            membership.save()
 
-        p.restoreState()
-        m.needs_printed = False
-        m.print_timestamp = None
-        m.save()
+            if current_badge == 10:
+                # Have we hit max pages?
+                if pages and page == int(pages):
+                    break
 
-        if x == 10:
-            # Have we hit max pages?
-            if pages and page == int(pages):
-                break
-
-            p.showPage()
-            x = 1
-            page += 1
-        else:
-            x += 1
+                p.showPage()
+                current_badge = 1
+                page += 1
+            else:
+                current_badge += 1
     p.showPage()
     p.save()
 

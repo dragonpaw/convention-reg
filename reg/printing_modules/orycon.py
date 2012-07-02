@@ -4,7 +4,7 @@ from reg.printing_modules import Text, Box
 # w = width, h = height, fonts come from PDF spec.
 # alignments can be 'left', 'right' or 'center'.
 
-def elements(membership):
+def elements(membership, quantity):
     """Returns the various elements for this badge.
 
     Elements must be Text or Box elements from reg.printing_modules.
