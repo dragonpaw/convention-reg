@@ -30,6 +30,12 @@ class PaymentOptions(admin.ModelAdmin):
 
 
 class MembershipTypeInline(admin.TabularInline):
+    fields = (
+        'name', 'code', 'price',
+        'sale_start', 'sale_end',
+        'approval_needed', 'in_quantity', 'numbered',
+        'requires',
+    )
     model = MembershipType
 
 
@@ -42,7 +48,7 @@ class EventOptions(admin.ModelAdmin):
     readonly_fields = ('slug',) # Django 1.2
     fieldsets = (
         (None, {'fields': (
-            'name',  'to_print', 'badge_number',
+            'name',  'to_print', 'badge_number', 'end_date',
         ), }),
     )
     inlines = (MembershipTypeInline,)

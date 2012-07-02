@@ -17,7 +17,8 @@ COLOR_OPTIONS = [(x, x) for x in color_list]
 class Event(models.Model):
     name = models.CharField(max_length=100, unique=True)
     badge_number = models.IntegerField("Next badge number", default=1)
-    to_print = models.BooleanField("Print the badges for this event.", default=True)
+    to_print = models.BooleanField("Print the badges for this event", default=True)
+    end_date = models.DateField("Date the event ends")
     slug = models.SlugField()
 
     class Meta:
@@ -101,9 +102,12 @@ class Person(models.Model):
 class MembershipTypeManager(models.Manager):
     def available(self, public=False):
         today = date.today()
-        qs = super(MembershipTypeManager, self).get_query_set().filter(
-            sale_start__lte = today,
-            sale_end__gte = today,
+        qs = super(MembershipTypeManager, self).get_query_set().exclude(
+            sale_start__gt=today,
+        ).exclude(
+            sale_end__lt=today,
+        ).exclude(
+            event__end_date__lt=today,
         )
         if public:
             qs = qs.filter(approval_needed=False)
@@ -114,8 +118,8 @@ class MembershipType(models.Model):
     event = models.ForeignKey(Event)
     name = models.CharField("Name", max_length=20, help_text="Name of the type of membership: Staff, Full, Saturday, Vendor.")
     code = models.CharField("Code", max_length=3, blank=True, default='')
-    sale_start = models.DateTimeField("Sales Start Time", help_text="Staff cannot sell this membership before this date.")
-    sale_end = models.DateTimeField("Sales End Time", help_text="Staff cannot sell this membership after this date.")
+    sale_start = models.DateField("Sales Start Time", help_text="Staff cannot sell this membership before this date.", blank=True, null=True)
+    sale_end = models.DateField("Sales End Time", help_text="Staff cannot sell this membership after this date.", blank=True, null=True)
     price = models.DecimalField(max_digits=6, decimal_places=2)
     approval_needed = models.BooleanField(default=False, help_text="Requires reg manager approval before will be printed. E.g.: Vendor.")
     requires = models.ManyToManyField('self',
@@ -296,7 +300,8 @@ class Payment(models.Model):
         ('admin', 'Administrative interface'),
         ('self','Self-Service UI'),
         ('event', 'At-event registration'),
-        ('migration', 'Ported over from old transactions.')
+        ('migration', 'Ported over from old transactions.'),
+        ('csv', 'Loaded from a CSV file.'),
     )
 
     user = models.ForeignKey('auth.User', blank=True, null=True)
