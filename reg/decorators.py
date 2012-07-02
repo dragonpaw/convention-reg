@@ -14,7 +14,7 @@ def render_template(func):
         if isinstance(view_response, HttpResponse):
             return view_response
         # Template name is "appname_viewname.html".
-        template = func.__module__.split('.')[1] + "_" + func.__name__ + '.html'
+        template = func.__module__.split('.')[0] + "_" + func.__name__ + '.html'
         return render_to_response(
             template,
             cleandict(view_response),
