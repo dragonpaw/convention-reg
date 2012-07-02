@@ -2,7 +2,7 @@
 {% block title %}Member Report{% endblock %}
 
 {% block content %}
-<table id="member-list">
+<table id="member-list" class="datatables">
     <thead>
         <tr>
             <th style="width: 200px;">Legal Name</th>
@@ -19,7 +19,11 @@
                 </a>
             </td>
             <td>{{ o.con_name }}</td>
-            <td>{{ o.city }}, {{ o.state }}</td>
+            <td>
+                {% if o.city %}
+                    {{ o.city }}, {{ o.state }}
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
