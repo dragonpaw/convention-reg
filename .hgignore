@@ -4,3 +4,4 @@ config.ini
 *.log
 *.kpf
 *.sublime-*
+convention.db
