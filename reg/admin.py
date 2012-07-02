@@ -1,7 +1,7 @@
 from django.contrib import admin
 from datetime import datetime
 
-from convention.reg.models import *
+from .models import *
 
 class AffiliationOptions(admin.ModelAdmin):
     list_display = ('name', 'tag', 'color')
