@@ -22,34 +22,46 @@
             });
         </script>
 
+        <script type="text/javascript" language="javascript"
+            src="{{STATIC_URL}}/js/jquery.dataTables.js"></script>
+        <script type="text/javascript" charset="utf-8">
+            $(document).ready(function() {
+                $('.datatables').dataTable({
+                    "bPaginate": false,
+                });
+            } );
+        </script>
+
         {% block head %}{% endblock %}
     </head>
     <body>
         <div class="columns" style="padding:20px;">
 	    <div class="container" >
 		<div class="fixed column" style="width:200px;">
-                    <div class="container" >
-                        {% block navbar %}
-                        {% include "navbar.html" %}
-                        {% endblock %}
-                    </div>
-                </div>
-                <div class="elastic column">
-                    <div class="container" >
-                        {% if messages %}
-                            {% for message in messages %}
-                            <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</div>
-                            {% endfor %}
-                        {% endif %}
-                    {% block content %} {% endblock %}
-                    </div>
-                </div>
-		<div class="fixed column" style="width:320px;">
-                    <div class="container" >
-                        {% block right %}{% endblock %}
-                    </div>
-                </div>
+            <div class="container" >
+                {% block navbar %}
+                {% include "navbar.html" %}
+                {% endblock %}
             </div>
+        </div>
+        <div class="elastic column">
+            <div class="container" >
+                {% if messages %}
+                    {% for message in messages %}
+                    <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                        {{ message|safe }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% block content %} {% endblock %}
+            </div>
+        </div>
+		<div class="fixed column" style="width:320px;">
+            <div class="container" >
+                {% block right %}{% endblock %}
+            </div>
+        </div>
+        </div>
         </div>
     </body>
 </html>
