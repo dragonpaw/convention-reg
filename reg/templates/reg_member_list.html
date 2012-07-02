@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<table id="member-list">
+<table class="datatables" id="member-list">
     <caption>Member List</caption>
     <thead>
         <tr>
@@ -36,7 +36,11 @@
             {% if is_public %}
                 <td>{{ o.country }}</td>
             {% else %}
-                <td>{{ o.city }}, {{ o.state }}</td>
+                {% if o.city %}
+                    <td>{{ o.city }}, {{ o.state }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
             {% endif %}
         </tr>
         {% endfor %}
