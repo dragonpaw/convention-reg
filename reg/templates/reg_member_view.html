@@ -16,6 +16,36 @@
 
 <br><br>
 
+<table id="current_memberships">
+    <caption>Paid Memberships</caption>
+    <thead>
+        <tr>
+            <th class="subhead">Event</th>
+            <th class="subhead">Type</th>
+            <th class="subhead">#</th>
+            <th class="subhead">Price Paid</th>
+            <th class="subhead">Method</th>
+            <th class="subhead">Comment</th>
+        </tr>
+    </thead><tbody>
+        {% for m in memberships %}
+        <tr class="{% cycle 'odd' 'even' %}">
+            <td>{{ m.event.name }}</td>
+            <td class="center">
+                {{ m.type.name }}
+                {% if m.quantity > 1%}<strong>x {{ m.quantity }}</strong>{% endif %}
+            </td>
+            <td class="right">{{ m.badge_number|default:'&mdash;' }}</td>
+            <td class="right">$ {{ m.price|floatformat:2 }}</td>
+            <td class="right">{{ m.payment_method }}</td>
+            <td class="right">{{ m.comment }}</td>
+        </tr>
+        {% empty %}
+            <tr><td colspan="6"><strong>None</strong></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 <table id="available_memberships">
     <caption>Available Memberships (Click to add to cart.)</caption>
     <thead>
@@ -38,7 +68,7 @@
                         <a href="{% url reg.views.cart_add person.pk, t.pk %}">{{t.name}}</a>
                     {% endif %}
                 </td>
-                <td class="right">${{t.price}}</td>
+                <td class="right">$ {{t.price|floatformat:2}}</td>
             </tr>
         {% endfor %}
     </tbody>
@@ -46,33 +76,5 @@
 
 <br><br>
 
-<table id="current_memberships">
-    <caption>Paid Memberships</caption>
-    <thead>
-        <tr>
-            <th class="subhead">Event</th>
-            <th class="subhead">Type</th>
-            <th class="subhead">#</th>
-            <th class="subhead">Price Paid</th>
-            <th class="subhead">Method</th>
-            <th class="subhead">Comment</th>
-        </tr>
-    </thead><tbody>
-        {% for m in memberships %}
-        <tr class="{% cycle 'odd' 'even' %}">
-            <td>{{ m.event.name }}</td>
-            <td class="center">
-                {{ m.type.name }}
-                {% if m.quantity > 1%}<strong>x {{ m.quantity }}</strong>{% endif %}
-            </td>
-            <td class="right">{{ m.badge_number|default:'&mdash;' }}</td>
-            <td class="right">{{ m.price }}</td>
-            <td class="right">{{ m.payment_method }}</td>
-            <td class="right">{{ m.comment }}</td>
-        </tr>
-        {% empty %}
-            <tr><td colspan="6"><strong>None</strong></td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+
 {% endblock %}
