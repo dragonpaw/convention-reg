@@ -1,24 +1,24 @@
 
 from south.db import db
 from django.db import models
-from convention.reg.models import *
+from reg.models import *
 
 class Migration:
-    
+
     def forwards(self, orm):
-        
+
         # Creating unique_together for [name] on Event.
         db.create_unique('reg_event', ['name'])
-        
-    
-    
+
+
+
     def backwards(self, orm):
-        
+
         # Deleting unique_together for [name] on Event.
         db.delete_unique('reg_event', ['name'])
-        
-    
-    
+
+
+
     models = {
         'auth.group': {
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -110,5 +110,5 @@ class Migration:
             'name': ('django.db.models.fields.CharField', [], {'max_length': '20'})
         }
     }
-    
+
     complete_apps = ['reg']

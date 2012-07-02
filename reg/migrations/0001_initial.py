@@ -1,12 +1,12 @@
 
 from south.db import db
 from django.db import models
-from convention.reg.models import *
+from reg.models import *
 
 class Migration:
-    
+
     def forwards(self, orm):
-        
+
         # Adding model 'Member'
         db.create_table('reg_member', (
             ('id', orm['reg.Member:id']),
@@ -23,7 +23,7 @@ class Migration:
             ('email', orm['reg.Member:email']),
         ))
         db.send_create_signal('reg', ['Member'])
-        
+
         # Adding model 'MembershipType'
         db.create_table('reg_membershiptype', (
             ('id', orm['reg.MembershipType:id']),
@@ -35,7 +35,7 @@ class Migration:
             ('price', orm['reg.MembershipType:price']),
         ))
         db.send_create_signal('reg', ['MembershipType'])
-        
+
         # Adding model 'Membership'
         db.create_table('reg_membership', (
             ('id', orm['reg.Membership:id']),
@@ -50,14 +50,14 @@ class Migration:
             ('print_timestamp', orm['reg.Membership:print_timestamp']),
         ))
         db.send_create_signal('reg', ['Membership'])
-        
+
         # Adding model 'PaymentMethod'
         db.create_table('reg_paymentmethod', (
             ('id', orm['reg.PaymentMethod:id']),
             ('name', orm['reg.PaymentMethod:name']),
         ))
         db.send_create_signal('reg', ['PaymentMethod'])
-        
+
         # Adding model 'Event'
         db.create_table('reg_event', (
             ('id', orm['reg.Event:id']),
@@ -66,7 +66,7 @@ class Migration:
             ('to_print', orm['reg.Event:to_print']),
         ))
         db.send_create_signal('reg', ['Event'])
-        
+
         # Adding model 'Affiliation'
         db.create_table('reg_affiliation', (
             ('id', orm['reg.Affiliation:id']),
@@ -76,37 +76,37 @@ class Migration:
             ('text_color', orm['reg.Affiliation:text_color']),
         ))
         db.send_create_signal('reg', ['Affiliation'])
-        
+
         # Creating unique_together for [member, type] on Membership.
         db.create_unique('reg_membership', ['member_id', 'type_id'])
-        
-    
-    
+
+
+
     def backwards(self, orm):
-        
+
         # Deleting unique_together for [member, type] on Membership.
         db.delete_unique('reg_membership', ['member_id', 'type_id'])
-        
+
         # Deleting model 'Member'
         db.delete_table('reg_member')
-        
+
         # Deleting model 'MembershipType'
         db.delete_table('reg_membershiptype')
-        
+
         # Deleting model 'Membership'
         db.delete_table('reg_membership')
-        
+
         # Deleting model 'PaymentMethod'
         db.delete_table('reg_paymentmethod')
-        
+
         # Deleting model 'Event'
         db.delete_table('reg_event')
-        
+
         # Deleting model 'Affiliation'
         db.delete_table('reg_affiliation')
-        
-    
-    
+
+
+
     models = {
         'auth.group': {
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -196,5 +196,5 @@ class Migration:
             'name': ('django.db.models.fields.CharField', [], {'max_length': '20'})
         }
     }
-    
+
     complete_apps = ['reg']

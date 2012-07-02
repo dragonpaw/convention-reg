@@ -105,8 +105,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.csrf',
     'django.core.context_processors.static',
     'django.contrib.messages.context_processors.messages',
-    "convention.reg.context_processors.open_events",
-    'convention.context_processors.add_session',
+    "reg.context_processors.open_events",
+    'context_processors.add_session',
 )
 
 
@@ -117,8 +117,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.admin',
     'django.contrib.messages',
-    'convention.reg',
-    'convention.lib',
+    'reg',
+    'lib',
     'south',
 )
 

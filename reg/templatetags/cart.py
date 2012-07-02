@@ -11,7 +11,7 @@ def not_in_cart(context, types):
     """
 
     # Has to runtime import, as views calls the parent module that loads this module.
-    from convention.reg.views import _get_cart
+    from reg.views import _get_cart
     cart = _get_cart(context['request'])
 
     new = list()

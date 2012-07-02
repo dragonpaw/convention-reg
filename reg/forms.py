@@ -1,5 +1,5 @@
 from django import forms
-from convention.reg.models import Person, MembershipSold, MembershipType, PaymentMethod
+from .models import Person, MembershipSold, MembershipType, PaymentMethod
 from datetime import date
 
 import fields

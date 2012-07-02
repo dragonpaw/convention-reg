@@ -1,24 +1,24 @@
 
 from south.db import db
 from django.db import models
-from convention.reg.models import *
+from reg.models import *
 
 class Migration:
-    
+
     def forwards(self, orm):
-        
+
         # Adding field 'Event.slug'
         db.add_column('reg_event', 'slug', orm['reg.event:slug'])
-        
-    
-    
+
+
+
     def backwards(self, orm):
-        
+
         # Deleting field 'Event.slug'
         db.delete_column('reg_event', 'slug')
-        
-    
-    
+
+
+
     models = {
         'auth.group': {
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -110,5 +110,5 @@ class Migration:
             'name': ('django.db.models.fields.CharField', [], {'max_length': '20'})
         }
     }
-    
+
     complete_apps = ['reg']

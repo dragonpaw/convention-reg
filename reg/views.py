@@ -14,7 +14,6 @@ from django.shortcuts import redirect, get_object_or_404, render_to_response
 from django.contrib.auth.decorators import login_required, permission_required
 
 
-#from convention.lib.jinja import render, render_to_response
 from .decorators import render_template
 import forms
 from .models import Event, Person, MembershipSold, MembershipType, PaymentMethod, Payment

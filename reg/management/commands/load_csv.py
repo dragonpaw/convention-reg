@@ -7,7 +7,7 @@ import sys
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from convention.reg.models import *
+from reg.models import *
 
 #0BADGENUM,1FULLNAME,2FIRSTNAME,3LASTNAME,4ADDRESS,5CITY,6STATE,7ZIP,8PHONE,
 #9COUNTRY,10EMAIL,11ENTRYDATE,12BADGENAME,13COMMENTS,14AMOUNTPAID,15HOWPAID,16COMMENTS2
