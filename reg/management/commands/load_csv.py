@@ -7,7 +7,7 @@ import sys
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from convention.reg.models import Person, MembershipSold, MembershipType, Event, PaymentMethod
+from convention.reg.models import *
 
 #0BADGENUM,1FULLNAME,2FIRSTNAME,3LASTNAME,4ADDRESS,5CITY,6STATE,7ZIP,8PHONE,
 #9COUNTRY,10EMAIL,11ENTRYDATE,12BADGENAME,13COMMENTS,14AMOUNTPAID,15HOWPAID,16COMMENTS2
@@ -29,16 +29,18 @@ class Command(BaseCommand):
             sys.exit(1)
 
         event = Event.objects.get(name=event_name)
-        type = MembershipType.objects.get(event=event, name=type_name)
 
         file = csv.DictReader(open(filename))
         for row in file:
+            for field in row:
+                row[field] = row[field].strip()
 
+            print(repr(row))
             # First, handle making the member.
             if 'FULLNAME' in row:
                 full_name = row['FULLNAME']
             else:
-                full_name = ' '.join([row[FIRST], row[LAST]])
+                full_name = ' '.join([row['FIRST'], row['LAST']])
             full_name = full_name.strip()
 
             # Skip blank row.
@@ -72,13 +74,15 @@ class Command(BaseCommand):
                 print "Unable to save user: {0}".format(full_name)
                 raise
 
+            type = MembershipType.objects.get(event=event, code__iexact=row['TYPE'])
+
             #------------------------------------------------------------------
             # Avoid errors when re-running.
-            if MembershipSold.objects.filter(member=member, type=type).count():
+            if MembershipSold.objects.filter(person=member, type=type).count():
                 continue
 
             # Now, handle the membership.
-            membership = MembershipSold(member=member, type=type)
+            membership = MembershipSold(person=member, type=type)
             print 'Person: {0}'.format(member)
             added_memberships += 1
 
@@ -90,10 +94,16 @@ class Command(BaseCommand):
             if 'AMOUNTPAID' in row:
                 membership.price = Decimal(row['AMOUNTPAID'].replace('$',''))
             else:
-                membership.price = 0
+                membership.price = type.price
 
-            if 'QUANTITY' in row and int(row['QUANTITY']) > 1:
-                membership.quantity = row['QUANTITY']
+            if type.in_quantity:
+                try:
+                    if row['QUANTITY']:
+                        membership.quantity = int(row['QUANTITY'])
+                    else:
+                        membership.quantity = 1
+                except:
+                    membership.quantity = 1
 
             if 'HOWPAID' in row:
                 how = row['HOWPAID']
@@ -104,8 +114,14 @@ class Command(BaseCommand):
             except PaymentMethod.DoesNotExist:
                 method = PaymentMethod(name=how)
                 method.save()
-            membership.payment_method = method
 
+            payment = Payment()
+            payment.method = method
+            payment.ui_used = 'csv'
+            payment.amount = membership.price
+            payment.save()
+
+            membership.payment = payment
             membership.print_timestamp = now
             membership.save()
         print "Added {0} members, and {1} memberships.".format(
