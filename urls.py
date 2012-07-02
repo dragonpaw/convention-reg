@@ -6,7 +6,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    (r'^reg/', include('convention.reg.urls')),
+    (r'^reg/', include('reg.urls')),
     (r'^$', 'django.views.generic.simple.redirect_to', {'url': '/reg/'} ),
 
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name':'login.html'}),
