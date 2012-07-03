@@ -5,32 +5,29 @@
 <table id="member-list" class="datatables">
     <thead>
         <tr>
-            <th style="width: 200px;">Legal Name</th>
-            <th style="width: 200px;">Con Name</th>
-            <th style="width: 400px;">City, State</th>
+            <th>Legal Name</th>
+            <th>Con Name</th>
+            <th>Badge number</th>
+            <th>City, State</th>
         </tr>
     </thead>
     <tbody>
-        {% for o in people %}
+        {% for membership in memberships %}
         <tr class={% cycle 'odd' 'even' %}>
             <td>
-                <a href="{% url reg.views.member_view id=o.pk %}">
-                    {{ o.name }}
+                <a href="{% url reg.views.member_view id=membership.person.pk %}">
+                    {{ membership.person.name }}
                 </a>
             </td>
-            <td>{{ o.con_name }}</td>
+            <td>{{ membership.person.con_name }}</td>
+            <td>{{ membership.badge_number|default:'' }}</td>
             <td>
-                {% if o.city %}
-                    {{ o.city }}, {{ o.state }}
+                {% if membership.person.city %}
+                    {{ membership.person.city }}, {{ membership.person.state }}
                 {% endif %}
             </td>
         </tr>
         {% endfor %}
     </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3">Total: {{ people|length }}</td>
-        </tr>
-    </tfoot>
 </table>
 {% endblock %}

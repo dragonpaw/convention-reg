@@ -273,9 +273,9 @@ def member_report(request, slug=None, public_only=False):
         event = None
 
     if event:
-        q = Person.objects.filter(memberships__type__event=event).distinct()
+        q = MembershipSold.objects.filter(type__event=event)
     else:
-        q = Person.objects.all()
+        q = People.objects.all()
 
     if public_only:
         q = q.filter(public=True)
@@ -285,7 +285,7 @@ def member_report(request, slug=None, public_only=False):
 
     return {
         'event': event,
-        'people': q,
+        'memberships': q,
         'is_public': public_only,
     }
 
