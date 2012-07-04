@@ -39,7 +39,7 @@ def elements(membership, quantity):
             Text(
                 x=2.0*inch,
                 y=0.35*inch,
-                font='Times',
+                font='Times-Roman',
                 size=8,
                 alignment='center',
                 text=name2
@@ -69,7 +69,7 @@ def elements(membership, quantity):
             Text(
                 x=2.0*inch,
                 y=0.2*inch,
-                font='Times',
+                font='Times-Roman',
                 size=10,
                 alignment='center',
                 text=city_state
