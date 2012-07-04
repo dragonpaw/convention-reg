@@ -3,6 +3,7 @@ from reg.printing_modules import Text, Box
 
 # w = width, h = height, fonts come from PDF spec.
 # alignments can be 'left', 'right' or 'center'.
+# X and Y are based on the BOTTOM left corner of the label!
 
 def elements(membership, quantity):
     """Returns the various elements for this badge.
@@ -72,7 +73,7 @@ def elements(membership, quantity):
             y=.81*inch,
             font='Helvetica-Bold',
             size=18,
-            alignment='left',
+            alignment='center',
             text=name1,
         )
     )
@@ -83,7 +84,7 @@ def elements(membership, quantity):
                 y=0.5*inch,
                 font='Helvetica',
                 size=8,
-                alignment='left',
+                alignment='center',
                 text=name2
             )
         )
@@ -102,21 +103,21 @@ def elements(membership, quantity):
     )
 
     # City, State
-    if membership.person.country == 'USA':
-        city_state = "{0}, {1}".format(membership.person.city, membership.person.state)
-    else:
-        city_state = "{0}, {1}".format(membership.person.city, membership.person.country)
-
-    elements.append(
-        Text(
-            x=1.75*inch,
-            y=0.37*inch,
-            font='Helvetica',
-            size=10,
-            alignment='left',
-            text=city_state
+    if membership.person.city:
+        if membership.person.country == 'USA':
+            city_state = "{0}, {1}".format(membership.person.city, membership.person.state)
+        else:
+            city_state = "{0}, {1}".format(membership.person.city, membership.person.country)
+        elements.append(
+            Text(
+                x=1.75*inch,
+                y=0.37*inch,
+                font='Helvetica',
+                size=10,
+                alignment='center',
+                text=city_state
+            )
         )
-    )
 
     # Badge #
     elements.append(
@@ -134,6 +135,8 @@ def elements(membership, quantity):
     return elements
 
 per_page = 10
+page_width = 8.5*inch
+page_height = 11*inch
 
 # Controls positions of each badge on the page
 start = {

@@ -3,8 +3,8 @@ from collections import defaultdict
 from decimal import Decimal
 from math import ceil
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 import sys
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -409,41 +409,43 @@ def selfserve_remove(request,email,type_id):
     return redirect(selfserve_index)
 
 @permission_required('reg.print_badges')
-def print_pdf(request, pages=None):
+def print_pdf(request, pages=None, clear=True):
     response = HttpResponse(mimetype='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=badges.pdf'
 
-    p = canvas.Canvas(response, pagesize=letter)
-    w, h = letter
+    p = canvas.Canvas(
+        response, pagesize=(printing.page_width, printing.page_height)
+    )
 
     pending = MembershipSold.objects.to_print()
 
+    if pages:
+        badges = printing.per_page*int(pages)
+        print("Limiting to {0} badges.".format(badges))
+        pending = pending[0:badges]
+
     current_badge = 1
-    page = 1
     for membership in pending:
         for num in range(1, membership.quantity+1):
+            if current_badge > printing.per_page:
+                p.showPage()
+                current_badge = 1
+
             # Render the individual badge.
             p.saveState()
             p.translate(*printing.start[current_badge])
 
-            for element in printing.elements(membership, quantity):
+            for element in printing.elements(membership, num):
                 element.render_to_canvas(p)
 
             p.restoreState()
-            membership.needs_printed = False
-            membership.print_timestamp = None
-            membership.save()
+            if clear:
+                membership.needs_printed = False
+                membership.print_timestamp = None
+                membership.save()
 
-            if current_badge == 10:
-                # Have we hit max pages?
-                if pages and page == int(pages):
-                    break
+            current_badge += 1
 
-                p.showPage()
-                current_badge = 1
-                page += 1
-            else:
-                current_badge += 1
     p.showPage()
     p.save()
 

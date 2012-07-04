@@ -21,7 +21,9 @@ urlpatterns = patterns('reg.views',
     url(r'^selfserve/checkout/$', 'checkout', {'is_selfserve': True}, name='selfserve-checkout' ),
 
     (r'^pending/$', 'print_pending'),
+    (r'^pdf/debug/$', 'print_pdf', {'clear': False}),
     (r'^pdf/$', 'print_pdf'),
+    (r'^pdf/(?P<pages>\d+)/debug/$', 'print_pdf', {'clear': False}),
     (r'^pdf/(?P<pages>\d+)/$', 'print_pdf'),
 
     url(r'^report/members/public/$', 'member_report', {'public_only':True}, name='public_report_all' ),
