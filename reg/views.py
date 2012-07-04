@@ -145,7 +145,7 @@ def member_view(request, id):
     }
 
 
-@permission_required('reg.add_membership')
+@permission_required('reg.add_membershipsold')
 def cart_remove(request, person_id, type_id):
     person = Person.objects.get(pk=person_id)
     type = MembershipType.objects.get(pk=type_id)
@@ -157,7 +157,7 @@ def cart_remove(request, person_id, type_id):
     return redirect(request.META['HTTP_REFERER'])
 
 
-@permission_required('reg.add_membership')
+@permission_required('reg.add_membershipsold')
 def cart_add(request, person_id=None, type_id=None, qty=1):
     person = Person.objects.get(pk=person_id)
     type = MembershipType.objects.get(pk=type_id)
@@ -173,9 +173,8 @@ def cart_add(request, person_id=None, type_id=None, qty=1):
         return redirect(request.META['HTTP_REFERER'])
 
 
-#@permission_required('reg.add_membership')
 @transaction.commit_on_success
-def checkout(request,is_selfserve=False):
+def checkout(request, is_selfserve=False):
     """Perform a checkout opertion.
 
     For types that can be in-quantity, if there's already some sold, a new sale
@@ -185,6 +184,8 @@ def checkout(request,is_selfserve=False):
     if is_selfserve:
         form = forms.SelfServePaymentForm(request.POST)
     else:
+        if not request.user.has_perm('reg.add_membershipsold'):
+            raise Http404
         form = forms.PaymentForm(request.POST)
 
     if not form.is_valid():
@@ -251,20 +252,17 @@ def checkout(request,is_selfserve=False):
 
 
 @permission_required('reg.print_badges')
-#@render('reg_pending.html')
 @render_template
 def print_pending(request):
     q = MembershipSold.objects.to_print()
     return { 'objects': q }
 
 
-#@render('reg_index.html')
 @render_template
 def index(request):
     return {}
 
 
-#@render('reg_member_list.html')
 @render_template
 def member_report(request, slug=None, public_only=False):
     if slug:
@@ -290,7 +288,6 @@ def member_report(request, slug=None, public_only=False):
     }
 
 
-#@render('reg_approval_report.html')
 @render_template
 def approvals_report(request, slug):
     event = Event.objects.get(slug=slug)
@@ -307,7 +304,6 @@ def approvals_report(request, slug):
     }
 
 
-#@render('reg_selfserve_index.html')
 @render_template
 def selfserve_index(request):
     form = forms.SelfServePaymentForm()
@@ -318,7 +314,6 @@ def selfserve_index(request):
     }
 
 
-#@render('reg_selfserve_add_email.html')
 @render_template
 def selfserve_add_email(request):
     if request.method == 'GET':
@@ -340,7 +335,6 @@ def selfserve_add_email(request):
             return redirect(selfserve_index)
 
 
-#@render('reg_selfserve_add_person.html')
 @render_template
 def selfserve_add_person(request):
     if request.method == 'GET':
@@ -365,7 +359,6 @@ def selfserve_add_person(request):
                 return redirect(selfserve_add_membership)
 
 
-#@render('reg_selfserve_add_membership.html')
 @render_template
 def selfserve_add_membership(request):
     person = Person.objects.get(pk=request.session['selfserve_person'])
