@@ -420,7 +420,7 @@ def print_api(request):
 
     badges = MembershipSold.objects.to_print()
     if badges.count() == 0:
-        HttpResponse('', mimetype='none')
+        return HttpResponse('', mimetype='none')
     else:
         return render_pdf(request)
 
