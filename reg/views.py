@@ -414,7 +414,7 @@ def print_api(request):
         raise Http404
     given_key = request.GET['api_key']
     real_key = settings.LOCAL_SETTINGS.get('printing','api-key')
-    print("Keys {0} vs. {1}".format(given_key, real_key))
+    # print("Keys {0} vs. {1}".format(given_key, real_key))
     if given_key != real_key:
         raise Http404
 
@@ -422,7 +422,7 @@ def print_api(request):
     if badges.count() == 0:
         HttpResponse('', mimetype='none')
     else:
-        return render_pdf(request, pages='1', clear=False)
+        return render_pdf(request)
 
 
 @permission_required('reg.print_badges')
@@ -441,7 +441,7 @@ def render_pdf(request, pages=None, clear=True):
 
     if pages:
         badges = printing.per_page*int(pages)
-        print("Limiting to {0} badges.".format(badges))
+        # print("Limiting to {0} badges.".format(badges))
         pending = pending[0:badges]
 
     current_badge = 1
