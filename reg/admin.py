@@ -10,7 +10,10 @@ class AffiliationOptions(admin.ModelAdmin):
 class MembershipInline(admin.TabularInline):
     model = MembershipSold
     readonly_fields = ('payment','price')
-    fields = ('person','type','badge_number','price','state','quantity','payment')
+    fields = (
+        'person', 'type', 'badge_number', 'needs_printed',
+        'price', 'state', 'quantity', 'payment'
+    )
 
 class PaymentOptions(admin.ModelAdmin):
     list_display = ('id', 'timestamp', 'method', 'amount', 'people', 'identifier')
