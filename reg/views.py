@@ -408,8 +408,28 @@ def selfserve_remove(request,email,type_id):
     _cart(request, person, type, 0)
     return redirect(selfserve_index)
 
+
+def print_api(request):
+    if 'api_key' not in request.GET:
+        raise Http404
+    given_key = request.GET['api_key']
+    real_key = settings.LOCAL_SETTINGS.get('printing','api-key')
+    print("Keys {0} vs. {1}".format(given_key, real_key))
+    if given_key != real_key:
+        raise Http404
+
+    badges = MembershipSold.objects.to_print()
+    if badges.count() == 0:
+        HttpResponse('', mimetype='none')
+    else:
+        return render_pdf(request, pages='1', clear=False)
+
+
 @permission_required('reg.print_badges')
 def print_pdf(request, pages=None, clear=True):
+    return render_pdf(request, pages=pages, clear=clear)
+
+def render_pdf(request, pages=None, clear=True):
     response = HttpResponse(mimetype='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=badges.pdf'
 

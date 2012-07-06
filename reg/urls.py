@@ -26,6 +26,8 @@ urlpatterns = patterns('reg.views',
     (r'^pdf/(?P<pages>\d+)/debug/$', 'print_pdf', {'clear': False}),
     (r'^pdf/(?P<pages>\d+)/$', 'print_pdf'),
 
+    (r'^api/printing$', 'print_api'),
+
     url(r'^report/members/public/$', 'member_report', {'public_only':True}, name='public_report_all' ),
 
     url(r'^report/members/all/(?P<slug>[\w\-]+)/$', 'member_report', name='private_member_report'),

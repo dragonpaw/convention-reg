@@ -49,6 +49,7 @@ DEFAULTS = {
     },
     'printing': {
         'module': 'westercon',
+        'api-key': '',
     }
 }
 
