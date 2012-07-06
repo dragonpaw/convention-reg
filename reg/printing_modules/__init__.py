@@ -37,7 +37,7 @@ class Text(BaseElement):
         super(Text, self).__init__(x=x, y=y, color=color)
         self.font = font
         self.size = size
-        self.text = str(text)
+        self.text = unicode(text)
         self.alignment = alignment
 
     def render_to_canvas(self, canvas):
